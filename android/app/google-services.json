@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "666253749032",
+    "project_id": "ess-app-13e74",
+    "storage_bucket": "ess-app-13e74.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:666253749032:android:603d071febd7436380be1d",
+        "android_client_info": {
+          "package_name": "com.example.ess"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBASdnmOuS60su04UPCPtKYLgh3Efbsb_E"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
