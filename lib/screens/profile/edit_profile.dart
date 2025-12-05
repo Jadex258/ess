@@ -11,6 +11,7 @@ class ProfileScreen extends StatelessWidget {
         backgroundColor: Colors.white,
         elevation: 0,
         scrolledUnderElevation: 0,
+        leadingWidth: 43,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () {
@@ -18,21 +19,13 @@ class ProfileScreen extends StatelessWidget {
           },
         ),
         title: const Text(
-          'Profile',
+          'Edit Profile',
           style: TextStyle(
             color: Colors.black,
             fontSize: 18,
             fontWeight: FontWeight.w500,
           ),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.edit_outlined, color: Colors.black),
-            onPressed: () {
-              // Handle edit action
-            },
-          ),
-        ],
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -101,6 +94,37 @@ class ProfileScreen extends StatelessWidget {
               // Contact Number
               _buildInfoCard(label: 'Contact Number', value: '0912 3456 789'),
 
+              const SizedBox(height: 25),
+
+              const Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Change Password',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.black,
+                  ),
+                ),
+              ),
+              
+              const SizedBox(height: 16),
+
+              _changePasswordCard(label: 'Old password', placeholder: 'Enter current password',
+              ),
+
+              const SizedBox(height: 16),
+
+              // Birthdate
+              _changePasswordCard(label: 'New password', placeholder: 'Enter new password',
+              ),
+
+              const SizedBox(height: 16),
+
+              // Email Address
+              _changePasswordCard(label: 'Confirm password', placeholder: 'Re-enter new password',
+              ),
+
               const SizedBox(height: 16),
 
               // Logout Button
@@ -111,7 +135,7 @@ class ProfileScreen extends StatelessWidget {
                     // Handle logout
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFF8A80),
+                    backgroundColor: const Color(0xFF2896FD),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
@@ -161,7 +185,7 @@ class ProfileScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             label,
@@ -172,8 +196,57 @@ class ProfileScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 4),
+          TextField(
+            obscureText: true,
+            decoration: InputDecoration(
+              hintText: value,
+              hintStyle: TextStyle(color: Colors.black, fontSize: 14,
+              ),
+              border: InputBorder.none,
+              contentPadding: EdgeInsets.zero,
+              isDense: true,
+            ),
+            style: const TextStyle(
+              fontSize: 14,
+              color: Colors.black,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _changePasswordCard({required String label, required String placeholder}) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
           Text(
-            value,
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey[600],
+              fontWeight: FontWeight.w400,
+            ),
+          ),
+          const SizedBox(height: 4),
+          TextField(
+            obscureText: true,
+            decoration: InputDecoration(
+              hintText: placeholder,
+              hintStyle: TextStyle(color: Colors.black, fontSize: 14,
+              ),
+              border: InputBorder.none,
+              contentPadding: EdgeInsets.zero,
+              isDense: true,
+            ),
             style: const TextStyle(
               fontSize: 14,
               color: Colors.black,
