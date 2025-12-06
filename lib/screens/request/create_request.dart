@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 
-class CreateRequestPage extends StatefulWidget {
-  const CreateRequestPage({super.key});
+class CreateRequestScreen extends StatefulWidget {
+  const CreateRequestScreen({super.key});
 
   @override
-  State<CreateRequestPage> createState() => _CreateRequestPageState();
+  State<CreateRequestScreen> createState() => _CreateRequestScreenState();
 }
 
-class _CreateRequestPageState extends State<CreateRequestPage> {
-  // State for dynamic form handling
+class _CreateRequestScreenState extends State<CreateRequestScreen> {
   String _selectedCategory = 'File a leave';
   final List<String> _categories = [
     'File a leave',
