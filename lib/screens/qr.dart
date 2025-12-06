@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-class ProfileScreen extends StatelessWidget {
-  const ProfileScreen({super.key});
+class QRScreen extends StatelessWidget {
+  const QRScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -33,8 +33,6 @@ class ProfileScreen extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const SizedBox(height: 15),
-
-              // Qr Code Reminders
               const Align(
                 alignment: Alignment.center,
                 child: Text(
@@ -49,8 +47,6 @@ class ProfileScreen extends StatelessWidget {
               ),
 
               const SizedBox(height: 20),
-
-              // Profile Picture
               Container(
                 width: 100,
                 height: 100,
@@ -62,8 +58,6 @@ class ProfileScreen extends StatelessWidget {
               ),
 
               const SizedBox(height: 13),
-
-              // Name
               const Text(
                 'John Doe',
                 style: TextStyle(
@@ -72,9 +66,7 @@ class ProfileScreen extends StatelessWidget {
                   color: Colors.black,
                 ),
               ),
-
               const SizedBox(height: 20),
-
               Container(
                 width: 280,
                 height: 290,
@@ -96,8 +88,6 @@ class ProfileScreen extends StatelessWidget {
               ),
               
               const SizedBox(height: 20),
-
-              // Logout Button
               SizedBox(
                 width: 250,
                 child: ElevatedButton(

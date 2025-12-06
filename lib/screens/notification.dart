@@ -1,29 +1,8 @@
 import 'package:flutter/material.dart';
 
-void main() {
-  runApp(const NotificationApp());
-}
 
-class NotificationApp extends StatelessWidget {
-  const NotificationApp({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Attendance Dashboard',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        scaffoldBackgroundColor: const Color(0xFFF3F3F3),
-        fontFamily: 'Poppins',
-      ),
-      home: const NotificationPage(),
-    );
-  }
-}
-
-class NotificationPage extends StatelessWidget {
-  const NotificationPage({Key? key}) : super(key: key);
+class NotificationScreen extends StatelessWidget {
+  const NotificationScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -34,68 +13,68 @@ class NotificationPage extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.all(20.0),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-              
-              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    child: Icon(Icons.chevron_left, size: 24, color: Colors.black),
-                ),
 
-                const Text(
-                  'Notifications',
-                  style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w300,
-                      color: Colors.black87,
-                    ),
-                ),
-              ]
-            ),
-                
-              const SizedBox(height: 16),
-              // Example Activity Items
-              _buildActivityItem(
-                title: 'Approved',
-                subtitle: 'Leave Request',
-                time: '3 hours ago',
-                icon: Icons.arrow_forward,
-                iconColor: Colors.green,
-              ),
+                  Row(
+                      children: [
+                        Container(
+                          child: Icon(Icons.chevron_left, size: 24, color: Colors.black),
+                        ),
 
-              _buildActivityItem(
-                title: 'Declined',
-                subtitle: 'Leave Request',
-                time: '1 day ago',
-                icon: Icons.arrow_forward,
-                iconColor: Colors.red,
-              ),
+                        const Text(
+                          'Notifications',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w300,
+                            color: Colors.black87,
+                          ),
+                        ),
+                      ]
+                  ),
 
-              _buildActivityItem(
-                title: 'Declined',
-                subtitle: 'Leave Request',
-                time: '2 days ago',
-                icon: Icons.arrow_forward,
-                iconColor: Colors.red,
-              ),
+                  const SizedBox(height: 16),
+                  // Example Activity Items
+                  _buildActivityItem(
+                    title: 'Approved',
+                    subtitle: 'Leave Request',
+                    time: '3 hours ago',
+                    icon: Icons.arrow_forward,
+                    iconColor: Colors.green,
+                  ),
 
-              _buildActivityItem(
-                title: 'Approved',
-                subtitle: 'Leave Request',
-                time: '3 weeks ago',
-                icon: Icons.arrow_forward,
-                iconColor: Colors.green,
-              ),
+                  _buildActivityItem(
+                    title: 'Declined',
+                    subtitle: 'Leave Request',
+                    time: '1 day ago',
+                    icon: Icons.arrow_forward,
+                    iconColor: Colors.red,
+                  ),
 
-              ]
-              ),
+                  _buildActivityItem(
+                    title: 'Declined',
+                    subtitle: 'Leave Request',
+                    time: '2 days ago',
+                    icon: Icons.arrow_forward,
+                    iconColor: Colors.red,
+                  ),
+
+                  _buildActivityItem(
+                    title: 'Approved',
+                    subtitle: 'Leave Request',
+                    time: '3 weeks ago',
+                    icon: Icons.arrow_forward,
+                    iconColor: Colors.green,
+                  ),
+
+                ]
             ),
           ),
         ),
+      ),
     );
   }
-  
+
   Widget _buildActivityItem({
     required String title,
     required String subtitle,
@@ -145,18 +124,18 @@ class NotificationPage extends StatelessWidget {
             ),
           ),
 
-              const SizedBox(height: 4),
-              Text(
-                time,
-                style: TextStyle(
-                  fontSize: 8,
-                  color: Colors.grey,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
+          const SizedBox(height: 4),
+          Text(
+            time,
+            style: TextStyle(
+              fontSize: 8,
+              color: Colors.grey,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
         ],
       ),
     );
   }
-
 }
+
