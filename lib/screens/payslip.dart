@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 
-class PayslipPage extends StatelessWidget {
-  const PayslipPage({super.key});
+class PayslipScreen extends StatelessWidget {
+  const PayslipScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Light grey background similar to the design
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
@@ -35,12 +34,8 @@ class PayslipPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 1. Total Net Pay Card
             _buildTotalNetPayCard(),
-
             const SizedBox(height: 32),
-
-            // 2. Deductions Section
             const Text(
               'Deductions',
               style: TextStyle(
@@ -51,10 +46,7 @@ class PayslipPage extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             _buildDeductionsRow(),
-
             const SizedBox(height: 32),
-
-            // 3. Payslips List Section
             const Text(
               'Payslips',
               style: TextStyle(
@@ -71,16 +63,14 @@ class PayslipPage extends StatelessWidget {
     );
   }
 
-  // --- Widgets ---
 
   Widget _buildTotalNetPayCard() {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
       decoration: BoxDecoration(
-        color: const Color(0xFFEBEBEB), // Slightly darker grey for the card
+        color: const Color(0xFFEBEBEB),
         borderRadius: BorderRadius.circular(16),
-        // No explicit shadow in the flat design image, but subtle depth is okay
       ),
       child: Column(
         children: const [
@@ -136,7 +126,7 @@ class PayslipPage extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
         decoration: BoxDecoration(
-          color: const Color(0xFFEBEBEB), // Matching the main card color
+          color: const Color(0xFFEBEBEB),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Column(
@@ -157,7 +147,7 @@ class PayslipPage extends StatelessWidget {
                   Icons.arrow_downward,
                   color: Color(0xFFD32F2F),
                   size: 20,
-                ), // Red Arrow
+                ),
                 const SizedBox(width: 4),
                 Text(
                   amount,
@@ -185,7 +175,6 @@ class PayslipPage extends StatelessWidget {
   }
 
   Widget _buildPayslipsList(BuildContext context) {
-    // Mock Data based on the image
     final List<Map<String, String>> payslips = [
       {
         'title': 'November pay',
@@ -203,9 +192,6 @@ class PayslipPage extends StatelessWidget {
         'amount': '\$200.00',
       },
     ];
-
-    // Using a Column inside the ScrollView instead of ListView to avoid scrolling conflicts
-    // since the parent is already a SingleChildScrollView.
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -231,73 +217,46 @@ class PayslipPage extends StatelessWidget {
     required String date,
     required String amount,
   }) {
-    return InkWell(
-      onTap: () {
-        // Simple navigation to a dummy details page
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const PayslipDetailsPage()),
-        );
-      },
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
-        child: Row(
-          children: [
-            const Icon(
-              Icons.arrow_upward,
-              color: Color(0xFF43A047),
-              size: 24,
-            ), // Green Arrow
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.black,
-                    ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.arrow_upward,
+            color: Color(0xFF43A047),
+            size: 24,
+          ), // Green Arrow
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.black,
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    date,
-                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                  ),
-                ],
-              ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  date,
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                ),
+              ],
             ),
-            Text(
-              amount,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-                color: Colors.black,
-              ),
+          ),
+          Text(
+            amount,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+              color: Colors.black,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
-    );
-  }
-}
-
-// Dummy Details Page for Navigation Test
-class PayslipDetailsPage extends StatelessWidget {
-  const PayslipDetailsPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("Payslip Details"),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        elevation: 1,
-      ),
-      body: const Center(child: Text("Full Payslip Breakdown would go here")),
     );
   }
 }

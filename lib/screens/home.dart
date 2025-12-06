@@ -1,29 +1,7 @@
 import 'package:flutter/material.dart';
 
-void main() {
-  runApp(const HomeApp());
-}
-
-class HomeApp extends StatelessWidget {
-  const HomeApp({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Dashboard',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        scaffoldBackgroundColor: const Color(0xFFF3F3F3),
-        fontFamily: 'Poppins',
-      ),
-      home: const HomePage(),
-    );
-  }
-}
-
-class HomePage extends StatelessWidget {
-  const HomePage({Key? key}) : super(key: key);
+class HomeScreen extends StatelessWidget {
+  const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -36,147 +14,138 @@ class HomePage extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                
-                // 
-                Container (
-                  width: double.infinity,
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: const Icon(Icons.grid_view, size: 24, color: Colors.grey),
-                            ),
-                          ],
-                      ),
-
-                           const SizedBox(height: 24),
-
-                            Row (
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                              const Text(
-                                'Morning, John Doe',
-                                style: TextStyle(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.black87,
-                                ),
-                              ),
-
-                              const CircleAvatar(
-                                radius: 25,
-                                backgroundColor: Color(0xFFE0E0E0),
-                              ),
-                              ]
-                            ),
-                            
-                            const SizedBox(height: 4),
-                            
-                            const Text(
-                              '3 December 2025',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey,
-                              ),
-                            ),
-
-                  const SizedBox(height: 24),
-                
-                // Time In/Out Cards
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildTimeCard(
-                        title: 'Time In',
-                        time: '08:30 am',
-                        subtitle: 'On time',
-                        badge: '+10pt',
-                        icon: Icons.arrow_forward,
-                        iconColor: Colors.green,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: _buildTimeCard(
-                        title: 'Time Out',
-                        time: '...',
-                        subtitle: 'Ongoing',
-                        badge: '+10pt',
-                        icon: Icons.arrow_back,
-                        iconColor: Colors.red,
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 24),
-                
-                // Pending Requests Section
                 Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Padding(
-                        padding: const EdgeInsets.all(20),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: const [
-                            Text(
-                              'Pending Requests',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.black87,
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Icon(
+                              Icons.grid_view,
+                              size: 24,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Morning, John Doe',
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87,
+                            ),
+                          ),
+
+                          const CircleAvatar(
+                            radius: 25,
+                            backgroundColor: Color(0xFFE0E0E0),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      const Text(
+                        '3 December 2025',
+                        style: TextStyle(fontSize: 14, color: Colors.grey),
+                      ),
+                      const SizedBox(height: 24),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildTimeCard(
+                              title: 'Time In',
+                              time: '08:30 am',
+                              subtitle: 'On time',
+                              badge: '+10pt',
+                              icon: Icons.arrow_forward,
+                              iconColor: Colors.green,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: _buildTimeCard(
+                              title: 'Time Out',
+                              time: '...',
+                              subtitle: 'Ongoing',
+                              badge: '+10pt',
+                              icon: Icons.arrow_back,
+                              iconColor: Colors.red,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Column(
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.all(20),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: const [
+                                  Text(
+                                    'Pending Requests',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.black87,
+                                    ),
+                                  ),
+                                  Text(
+                                    '3',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.black87,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                            Text(
-                              '3',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.black87,
-                              ),
+                            _buildRequestItem(
+                              'Leave',
+                              'Nag igit igit',
+                              'Dec. 05 2025',
+                            ),
+
+                            _buildRequestItem(
+                              'Overtime',
+                              'Motivated',
+                              'Dec. 05 2025',
                             ),
                           ],
                         ),
                       ),
-                      _buildRequestItem(
-                        'Leave', 
-                        'Nag igit igit', 
-                        'Dec. 05 2025'),
-
-                      _buildRequestItem(
-                        'Overtime', 
-                        'Motivated', 
-                        'Dec. 05 2025'),
                     ],
                   ),
                 ),
 
-                    ]
-                  ),
-                ),
-                
                 const SizedBox(height: 24),
-                
-              // Recent Activity Section
                 Container(
-                  width: double.infinity, // Full screen width
-                  color: Colors.white, // Optional: match your scaffold background
+                  width: double.infinity,
+                  color: Colors.white,
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 0,
+                    ),
                     child: Container(
                       decoration: BoxDecoration(
                         color: Colors.white,
@@ -187,8 +156,7 @@ class HomePage extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-
-                          Row (
+                          Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               const Text(
@@ -202,17 +170,16 @@ class HomePage extends StatelessWidget {
 
                               TextButton(
                                 onPressed: () {},
-                                child: const Text
-                                  ('See More...',
+                                child: const Text(
+                                  'See More...',
                                   style: TextStyle(
                                     fontSize: 14,
                                     color: Colors.grey,
-                                   )
+                                  ),
                                 ),
-                              )
-                          ],
-                        ),
-                          
+                              ),
+                            ],
+                          ),
 
                           const SizedBox(height: 16),
                           // Example Activity Items
@@ -224,7 +191,6 @@ class HomePage extends StatelessWidget {
                             icon: Icons.login,
                             iconColor: Colors.green,
                           ),
-
                           const SizedBox(height: 12),
                           _buildActivityItem(
                             title: 'Checked Out',
@@ -234,7 +200,6 @@ class HomePage extends StatelessWidget {
                             icon: Icons.logout,
                             iconColor: Colors.red,
                           ),
-
                           const SizedBox(height: 12),
                           _buildActivityItem(
                             title: 'Checked Out',
@@ -244,13 +209,11 @@ class HomePage extends StatelessWidget {
                             icon: Icons.access_time,
                             iconColor: Colors.blue,
                           ),
-
                         ],
                       ),
                     ),
                   ),
                 ),
-
               ],
             ),
           ),
@@ -258,7 +221,7 @@ class HomePage extends StatelessWidget {
       ),
     );
   }
-  
+
   Widget _buildTimeCard({
     required String title,
     required String time,
@@ -305,10 +268,7 @@ class HomePage extends StatelessWidget {
             children: [
               Text(
                 subtitle,
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey,
-                ),
+                style: const TextStyle(fontSize: 12, color: Colors.grey),
               ),
               Text(
                 badge,
@@ -324,7 +284,7 @@ class HomePage extends StatelessWidget {
       ),
     );
   }
-  
+
   Widget _buildRequestItem(String title, String subtitle, String date) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
@@ -345,10 +305,7 @@ class HomePage extends StatelessWidget {
               const SizedBox(height: 4),
               Text(
                 subtitle,
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey,
-                ),
+                style: const TextStyle(fontSize: 12, color: Colors.grey),
               ),
             ],
           ),
@@ -357,10 +314,7 @@ class HomePage extends StatelessWidget {
             children: [
               Text(
                 date,
-                style: const TextStyle(
-                  fontSize: 13,
-                  color: Colors.black87,
-                ),
+                style: const TextStyle(fontSize: 13, color: Colors.black87),
               ),
               const SizedBox(height: 4),
               const Text(
@@ -377,7 +331,7 @@ class HomePage extends StatelessWidget {
       ),
     );
   }
-  
+
   Widget _buildActivityItem({
     required String title,
     required String date,
@@ -418,10 +372,7 @@ class HomePage extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   date,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey,
-                  ),
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
                 ),
               ],
             ),
