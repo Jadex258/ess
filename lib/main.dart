@@ -2,6 +2,10 @@ import 'package:ess/firebase_options.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
+import 'package:ess/screens/authentication/login.dart';
+import 'package:ess/screens/authentication/create_new_password.dart';
+import 'package:ess/screens/authentication/reset_password.dart';
+import 'package:ess/screens/authentication/verify_email.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
@@ -21,7 +25,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: Login(),
     );
   }
 }
