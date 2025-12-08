@@ -2,9 +2,13 @@ import 'package:ess/components/button.dart';
 import 'package:ess/components/textformfield.dart';
 import 'package:ess/enums/account_enum.dart';
 import 'package:ess/models/employee.dart';
+import 'package:ess/provider/employee_provider.dart';
+import 'package:ess/services/employee_service.dart';
+import 'package:ess/services/firebase_auth_service.dart';
 import 'package:ess/widgets/app_bar.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -13,26 +17,10 @@ class EditProfileScreen extends StatefulWidget {
   State<EditProfileScreen> createState() => _EditProfileScreenState();
 }
 
-class _EditProfileScreenState extends State<EditProfileScreen>
-    with SingleTickerProviderStateMixin {
+class _EditProfileScreenState extends State<EditProfileScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final _formKey = GlobalKey<FormState>();
-
-  // Dummy employee data (replace with actual employee data)
-  final _employee = Employee(
-    id: 'EMP001',
-    email: 'johndoe@company.com',
-    firstName: 'John',
-    lastName: 'Doe',
-    middleName: 'Michael',
-    phoneNumber: '+1 (555) 123-4567',
-    address: '123 Main Street, Ormoc City, Leyte 6541',
-    department: 'Engineering',
-    position: 'Senior UI/UX Designer',
-    employmentType: EmploymentType.fullTime,
-    hireDate: DateTime(2024, 1, 15),
-    accountStatus: AccountStatus.active,
-  );
+  bool _isLoading = false;
 
   // Editable fields controllers
   final _firstNameController = TextEditingController();
@@ -45,18 +33,35 @@ class _EditProfileScreenState extends State<EditProfileScreen>
   final _currentPasswordController = TextEditingController();
   final _newPasswordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  String? _authError;
+
+  bool _hasMinLength = false;
+  bool _hasSpecialChar = false;
+  bool _hasUppercaseLowercase = false;
+  bool _hasNumber = false;
+  bool _passwordsMatch = false;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _currentPasswordController.addListener((){
+      if (_authError != null) {
+        setState(() => _authError = null);
+      }
+    });
+    _newPasswordController.addListener(_checkPasswordRequirements);
+    _newPasswordController.addListener(_checkPasswordMatch);
+    _confirmPasswordController.addListener(_checkPasswordMatch);
 
-    // Initialize controllers with employee data
-    _firstNameController.text = _employee.firstName;
-    _lastNameController.text = _employee.lastName;
-    _middleNameController.text = _employee.middleName ?? '';
-    _phoneNumberController.text = _employee.phoneNumber ?? '';
-    _addressController.text = _employee.address ?? '';
+    final employee = context.read<EmployeeProvider>().employee;
+    if (employee != null) {
+      _firstNameController.text = employee.firstName;
+      _lastNameController.text = employee.lastName;
+      _middleNameController.text = employee.middleName ?? '';
+      _phoneNumberController.text = employee.phoneNumber ?? '';
+      _addressController.text = employee.address ?? '';
+    }
   }
 
   @override
@@ -73,63 +78,190 @@ class _EditProfileScreenState extends State<EditProfileScreen>
     super.dispose();
   }
 
+  void _checkPasswordRequirements() {
+    final password = _newPasswordController.text;
+    setState(() {
+      _hasMinLength = password.length >= 8;
+      _hasUppercaseLowercase = RegExp(r'(?=.*[a-z])(?=.*[A-Z])').hasMatch(password);
+      _hasNumber = RegExp(r'[0-9]').hasMatch(password);
+      _hasSpecialChar = RegExp(r'[!@#$%^&*(),.?":{}|<>_\-\\/\[\];+=]').hasMatch(password);
+    });
+  }
+
+  void _checkPasswordMatch() {
+    final newPassword = _newPasswordController.text;
+    final confirmPassword = _confirmPasswordController.text;
+    setState(() {
+      _passwordsMatch = newPassword.isNotEmpty &&
+          confirmPassword.isNotEmpty &&
+          confirmPassword == newPassword;
+    });
+  }
+
+  bool get _allRequirementsMet {
+    return _hasMinLength && _hasUppercaseLowercase && _hasNumber && _hasSpecialChar &&_passwordsMatch;
+  }
+
+
+  Future<void> _saveChanges(EmployeeProvider employeeProvider, BuildContext context) async {
+    setState(() => _isLoading = true);
+    if (_tabController.index == 0) {
+      final updatedEmployee = employeeProvider.employee?.copyWith(
+        firstName: _firstNameController.text.trim(),
+        lastName: _lastNameController.text.trim(),
+        middleName: _middleNameController.text.trim().isNotEmpty
+            ? _middleNameController.text.trim()
+            : null,
+        phoneNumber: _phoneNumberController.text.trim().isNotEmpty
+            ? _phoneNumberController.text.trim()
+            : null,
+        address: _addressController.text.trim().isNotEmpty
+            ? _addressController.text.trim()
+            : null,
+      );
+
+      try {
+        await EmployeeService.updateEmployeeProfile(
+          firstName: updatedEmployee?.firstName,
+          lastName: updatedEmployee?.lastName,
+          middleName: updatedEmployee?.middleName,
+          phoneNumber: updatedEmployee?.phoneNumber,
+          address: updatedEmployee?.address,
+        );
+
+        employeeProvider.setEmployee(updatedEmployee!);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Profile updated successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        Navigator.pop(context, updatedEmployee);
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to update profile: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      } finally {
+        setState(() => _isLoading = false);
+      }
+    } else {
+      final currentPassword = _currentPasswordController.text.trim();
+      final newPassword = _newPasswordController.text.trim();
+
+      String? currentPasswordError;
+
+      try {
+        final user = FirebaseAuthService.currentUser;
+        if (user == null) throw Exception('No user logged in');
+
+        final credential = EmailAuthProvider.credential(
+          email: user.email!,
+          password: currentPassword,
+        );
+
+        await user.reauthenticateWithCredential(credential);
+
+        await FirebaseAuthService.updatePassword(newPassword);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Password changed successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        _currentPasswordController.clear();
+        _newPasswordController.clear();
+        _confirmPasswordController.clear();
+
+        _tabController.animateTo(0);
+      } on FirebaseAuthException catch (e) {
+        if (e.toString().contains('credential is incorrect')) {
+          currentPasswordError = 'Current password is incorrect';
+        } else if (e.toString().contains('weak')) {
+          currentPasswordError = 'Password is too weak';
+        } else {
+          currentPasswordError = e.message ?? 'Failed to change password';
+        }
+      }
+      finally {
+        setState(() => _isLoading = false);
+      }
+      _formKey.currentState!.validate();
+      if(currentPasswordError != null) setState(() => _authError = currentPasswordError);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: CustomAppBar(
-        title: 'Edit Profile',
-      ),
-      body: Form(
-        key: _formKey,
-        child: Column(
-          children: [
-            _buildProfileHeader(),
-            TabBar(
-              controller: _tabController,
-              labelColor: const Color(0xFF2896FD),
-              unselectedLabelColor: Colors.grey[600],
-              indicatorColor: const Color(0xFF2896FD),
-              labelStyle: const TextStyle(
-                fontWeight: FontWeight.w500,
-                fontSize: 14,
-                fontFamily: 'Poppins'
-              ),
-              tabs: const [
-                Tab(text: 'Personal Info'),
-                Tab(text: 'Change Password'),
+    return Consumer<EmployeeProvider>(
+      builder: (context, employeeProvider, _) {
+        final employee = employeeProvider.employee;
+        if (employee == null) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        return Scaffold(
+          backgroundColor: Colors.white,
+          appBar: CustomAppBar(title: 'Edit Profile'),
+          body: Form(
+            key: _formKey,
+            child: Column(
+              children: [
+                _buildProfileHeader(employee),
+                TabBar(
+                  controller: _tabController,
+                  labelColor: const Color(0xFF2896FD),
+                  unselectedLabelColor: Colors.grey[600],
+                  indicatorColor: const Color(0xFF2896FD),
+                  labelStyle: const TextStyle(
+                    fontWeight: FontWeight.w500,
+                    fontSize: 14,
+                    fontFamily: 'Poppins',
+                  ),
+                  tabs: const [
+                    Tab(text: 'Personal Info'),
+                    Tab(text: 'Change Password'),
+                  ],
+                ),
+                Expanded(
+                  child: TabBarView(
+                    controller: _tabController,
+                    children: [
+                      _buildPersonalInfoTab(),
+                      _buildChangePasswordTab(),
+                    ],
+                  ),
+                ),
               ],
             ),
-            Expanded(
-              child: TabBarView(
-                controller: _tabController,
-                children: [
-                  _buildPersonalInfoTab(),
-                  _buildChangePasswordTab(),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-      bottomNavigationBar: _buildBottomButtons(),
+          ),
+          bottomNavigationBar: _buildBottomButtons(employeeProvider),
+        );
+      },
     );
   }
 
-  Widget _buildProfileHeader() {
+  Widget _buildProfileHeader(Employee employee) {
     return Column(
       children: [
         Text(
-          _employee.fullName,
+          employee.fullName,
           style: const TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
             color: Colors.black,
           ),
         ),
-
         Text(
-          _employee.position,
+          employee.position,
           style: TextStyle(
             fontSize: 14,
             color: Colors.grey[600],
@@ -146,17 +278,12 @@ class _EditProfileScreenState extends State<EditProfileScreen>
         spacing: 16,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(),
           CustomTextField(
             label: 'First Name',
             controller: _firstNameController,
             prefixIcon: const Icon(Icons.person, size: 20),
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'First name is required';
-              }
-              return null;
-            },
+            validator: (value) =>
+            (value == null || value.isEmpty) ? 'First name is required' : null,
           ),
           CustomTextField(
             label: 'Middle Name (Optional)',
@@ -167,12 +294,8 @@ class _EditProfileScreenState extends State<EditProfileScreen>
             label: 'Last Name',
             controller: _lastNameController,
             prefixIcon: const Icon(Icons.person, size: 20),
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Last name is required';
-              }
-              return null;
-            },
+            validator: (value) =>
+            (value == null || value.isEmpty) ? 'Last name is required' : null,
           ),
           CustomTextField(
             label: 'Phone Number',
@@ -180,17 +303,23 @@ class _EditProfileScreenState extends State<EditProfileScreen>
             prefixIcon: const Icon(Icons.phone, size: 20),
             keyboardType: TextInputType.phone,
             validator: (value) {
-              if (value != null && value.isNotEmpty && !RegExp(r'^[\d\s\-\+\(\)]{10,}$').hasMatch(value)) {
-                return 'Enter a valid phone number';
+              if (value == null || value.isEmpty) {
+                return 'Phone Number is required';
               }
               return null;
-            },
+            }
           ),
           CustomTextField(
             label: 'Address',
             controller: _addressController,
             prefixIcon: const Icon(Icons.location_on, size: 20),
             textInputAction: TextInputAction.done,
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Address is required';
+              }
+              return null;
+            }
           ),
         ],
       ),
@@ -204,18 +333,17 @@ class _EditProfileScreenState extends State<EditProfileScreen>
         spacing: 16,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(),
           CustomTextField(
             label: 'Current Password',
             controller: _currentPasswordController,
             isPassword: true,
             validator: (value) {
               if (value == null || value.isEmpty) {
-                return 'Current password is required';
+                return 'Please enter your current password';
               }
-              // Add validation against actual current password
+              if (_authError != null) return _authError;
               return null;
-            },
+            }
           ),
           CustomTextField(
             label: 'New Password',
@@ -223,13 +351,10 @@ class _EditProfileScreenState extends State<EditProfileScreen>
             isPassword: true,
             validator: (value) {
               if (value == null || value.isEmpty) {
-                return 'New password is required';
-              }
-              if (value.length < 8) {
-                return 'Password must be at least 8 characters';
+                return 'Please enter your new password';
               }
               return null;
-            },
+            }
           ),
           CustomTextField(
             label: 'Confirm New Password',
@@ -238,39 +363,67 @@ class _EditProfileScreenState extends State<EditProfileScreen>
             isPassword: true,
             validator: (value) {
               if (value == null || value.isEmpty) {
-                return 'Please confirm your password';
-              }
-              if (value != _newPasswordController.text) {
-                return 'Passwords do not match';
+                return 'Please confirm your new password';
               }
               return null;
-            },
+            }
           ),
-          SizedBox(),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.grey[50],
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.grey[200]!),
+          _buildPasswordRequirements(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPasswordRequirements() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Password Requirements:',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey[700],
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Password Requirements:',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.grey[700],
-                  ),
-                ),
-                const SizedBox(height: 8),
-                _buildPasswordRequirement('At least 8 characters long'),
-                _buildPasswordRequirement('Contains uppercase and lowercase letters'),
-                _buildPasswordRequirement('Includes at least one number'),
-                _buildPasswordRequirement('Includes at least one special character'),
-              ],
+          ),
+          const SizedBox(height: 12),
+          _buildRequirementItem('At least 8 characters', _hasMinLength),
+          _buildRequirementItem('Uppercase and lowercase letters', _hasUppercaseLowercase),
+          _buildRequirementItem('At least one number', _hasNumber),
+          _buildRequirementItem('At least one special character', _hasSpecialChar),
+          _buildRequirementItem('Passwords match', _passwordsMatch),
+        ],
+      ),
+    );
+  }
+
+
+  Widget _buildRequirementItem(String text, bool isMet) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          Icon(
+            isMet ? Icons.check_circle : Icons.circle_outlined,
+            size: 18,
+            color: isMet ? Colors.green : Colors.grey[400],
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(
+                fontSize: 13,
+                color: isMet ? Colors.grey[800] : Colors.grey[600],
+                fontWeight: isMet ? FontWeight.w500 : FontWeight.normal,
+              ),
             ),
           ),
         ],
@@ -278,7 +431,8 @@ class _EditProfileScreenState extends State<EditProfileScreen>
     );
   }
 
-  Widget _buildBottomButtons() {
+
+  Widget _buildBottomButtons(EmployeeProvider employeeProvider) {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
       decoration: BoxDecoration(
@@ -290,88 +444,12 @@ class _EditProfileScreenState extends State<EditProfileScreen>
         children: [
           PrimaryButton(
             text: 'Save Changes',
-            onPressed: () {
-              if (_formKey.currentState!.validate()) {
-                _saveChanges();
-              }
+            isLoading: _isLoading,
+            onPressed: () async {
+              if (_tabController.index == 1 && !_allRequirementsMet) return;
+              if (!_formKey.currentState!.validate()) return;
+              await _saveChanges(employeeProvider, context);
             },
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _saveChanges() {
-    if (_tabController.index == 0) {
-      // Save personal info
-      final updatedEmployee = Employee(
-        id: _employee.id,
-        email: _employee.email,
-        firstName: _firstNameController.text.trim(),
-        lastName: _lastNameController.text.trim(),
-        middleName: _middleNameController.text.trim().isNotEmpty
-            ? _middleNameController.text.trim()
-            : null,
-        phoneNumber: _phoneNumberController.text.trim().isNotEmpty
-            ? _phoneNumberController.text.trim()
-            : null,
-        address: _addressController.text.trim().isNotEmpty
-            ? _addressController.text.trim()
-            : null,
-        department: _employee.department,
-        position: _employee.position,
-        employmentType: _employee.employmentType,
-        hireDate: _employee.hireDate,
-        accountStatus: _employee.accountStatus,
-      );
-
-      // TODO: Save updated employee to backend
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Profile updated successfully'),
-          backgroundColor: Colors.green,
-        ),
-      );
-
-      Navigator.pop(context, updatedEmployee);
-
-    } else {
-      // Change password
-      // TODO: Implement password change API call
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Password changed successfully'),
-          backgroundColor: Colors.green,
-        ),
-      );
-
-      // Clear password fields
-      _currentPasswordController.clear();
-      _newPasswordController.clear();
-      _confirmPasswordController.clear();
-
-      // Switch back to personal info tab
-      _tabController.animateTo(0);
-    }
-  }
-
-  Widget _buildPasswordRequirement(String requirement) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
-      child: Row(
-        children: [
-          Icon(
-            Icons.check_circle,
-            size: 16,
-            color: Colors.green,
-          ),
-          const SizedBox(width: 8),
-          Text(
-            requirement,
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey[600],
-            ),
           ),
         ],
       ),

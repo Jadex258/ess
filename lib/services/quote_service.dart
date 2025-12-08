@@ -24,7 +24,6 @@ class QuoteService {
         throw Exception('Failed to load quote: ${response.statusCode}');
       }
     } catch (e) {
-      print('Error fetching quote: $e');
       return {
         'content': 'The only way to do great work is to love what you do.',
         'author': 'Steve Jobs',

@@ -14,6 +14,7 @@ class CustomTextField extends StatefulWidget {
   final Widget? prefixIcon;
   final Widget? suffixIcon;
   final void Function(String)? onChanged;
+  final bool autofocus;
 
   const CustomTextField({
     super.key,
@@ -29,6 +30,7 @@ class CustomTextField extends StatefulWidget {
     this.prefixIcon,
     this.suffixIcon,
     this.onChanged,
+    this.autofocus = false
   });
 
   @override
@@ -44,6 +46,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
       controller: widget.controller,
       validator: widget.validator,
       keyboardType: widget.keyboardType,
+      autofocus: widget.autofocus,
       textInputAction: widget.textInputAction ?? TextInputAction.next,
       obscureText: widget.isPassword ? _obscureText : false,
       maxLines: widget.maxLines,
@@ -54,7 +57,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
         labelText: widget.label,
         hintText: widget.hint,
         labelStyle: TextStyle(color: Colors.black54),
-        hintStyle: TextStyle(color: Colors.black54),
+        hintStyle: TextStyle(color: Colors.black26),
         prefixIcon: widget.prefixIcon,
         suffixIcon: widget.isPassword
             ? ExcludeFocus(

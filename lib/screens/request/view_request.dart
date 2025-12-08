@@ -1,6 +1,7 @@
 import 'package:ess/components/button.dart';
 import 'package:ess/enums/request_enums.dart';
 import 'package:ess/models/request.dart';
+import 'package:ess/services/request_service.dart';
 import 'package:ess/widgets/app_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -10,44 +11,96 @@ class ViewRequestScreen extends StatelessWidget {
 
   const ViewRequestScreen({super.key, required this.request});
 
+
+  Future<void> _handleCancelRequest(BuildContext context, Request req) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Cancel Request'),
+        content: const Text('Are you sure you want to cancel this request?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('No')),
+          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Yes')),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      await RequestService.cancelRequest(request.id);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Request cancelled successfully'), backgroundColor: Colors.green,),
+      );
+      Navigator.pop(context);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to cancel request: ${e.toString()}'), backgroundColor: Colors.red),
+      );
+    }
+  }
+
+
   @override
   Widget build(BuildContext context) {
+    final ValueNotifier<bool> isLoading = ValueNotifier(false);
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: CustomAppBar(
         title: 'Request Details',
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Column(
-          spacing: 16,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildStatusHeader(),
-            _buildRequestInfoCard(),
-            _buildRequestDetails(),
-            if (request.remarks != null && request.remarks!.isNotEmpty)
-              _buildRemarksSection(),
-            if (request.status == RequestStatus.pending)
-              SecondaryButton(
-                text: "Cancel Request",
-                color: Color(0xFFE90000),
-                onPressed: () {
-
-                },
-              )
-          ],
+      body: StreamBuilder<Request>(
+        stream: RequestService.streamRequestById(
+          request.id,
+          initialValue: request,
         ),
+        builder: (context, snapshot) {
+          final req = snapshot.data ?? request;
+          return SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Column(
+              spacing: 16,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildStatusHeader(req),
+                _buildRequestInfoCard(req),
+                _buildRequestDetails(req),
+                if (req.remarks != null && req.remarks!.isNotEmpty)
+                  _buildRemarksSection(req),
+                if (req.status == RequestStatus.pending)
+                  ValueListenableBuilder<bool>(
+                    valueListenable: isLoading,
+                    builder: (context, loading, _) {
+                      return SecondaryButton(
+                        text: 'Cancel Request',
+                        color: const Color(0xFFE90000),
+                        isLoading: isLoading.value,
+                        onPressed: loading
+                            ? null
+                            : () async {
+                          isLoading.value = true;
+                          await _handleCancelRequest(context, req);
+                          isLoading.value = false;
+                        },
+                      );
+                    },
+                  )
+
+              ],
+            ),
+          );
+        },
       ),
     );
   }
 
-  Widget _buildStatusHeader() {
+
+  Widget _buildStatusHeader(Request req) {
     Color statusColor;
     IconData statusIcon;
     String statusText;
 
-    switch (request.status) {
+    switch (req.status) {
       case RequestStatus.pending:
         statusColor = const Color(0xFF3F51B5);
         statusIcon = Icons.pending;
@@ -88,9 +141,9 @@ class ViewRequestScreen extends StatelessWidget {
                     color: statusColor,
                   ),
                 ),
-                if (request.respondedAt != null)
+                if (req.respondedAt != null)
                   Text(
-                    'Responded on ${DateFormat('MMM d, yyyy').format(request.respondedAt!)}',
+                    'Responded on ${DateFormat('MMM d, yyyy').format(req.respondedAt!)}',
                     style: TextStyle(
                       fontSize: 12,
                       color: Colors.grey[600],
@@ -104,14 +157,13 @@ class ViewRequestScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildRequestInfoCard() {
+  Widget _buildRequestInfoCard(Request req) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.grey[50],
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!),
       ),
       child: Column(
         spacing: 4,
@@ -121,9 +173,9 @@ class ViewRequestScreen extends StatelessWidget {
             spacing: 2,
             runSpacing: 4,
             children: [
-              _buildInfoChip(request.id),
+              _buildInfoChip(req.id),
               const SizedBox(width: 4),
-              _buildInfoChip(request.type.label),
+              _buildInfoChip(req.type.label),
             ],
           ),
           const SizedBox(height: 2),
@@ -138,7 +190,7 @@ class ViewRequestScreen extends StatelessWidget {
                 ),
               ),
               Text(
-                DateFormat('MMM d, yyyy • h:mm a').format(request.createdAt),
+                DateFormat('MMM d, yyyy • h:mm a').format(req.createdAt),
                 style: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
@@ -146,7 +198,7 @@ class ViewRequestScreen extends StatelessWidget {
               ),
             ],
           ),
-          if (request.respondedBy != null)
+          if (req.respondedBy != null)
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -158,7 +210,7 @@ class ViewRequestScreen extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  request.respondedBy!,
+                  req.respondedBy!,
                   style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
@@ -171,7 +223,7 @@ class ViewRequestScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildRequestDetails() {
+  Widget _buildRequestDetails(Request req) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -184,12 +236,12 @@ class ViewRequestScreen extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 8),
-        if (request.type == RequestType.leave)
-          _buildLeaveDetails()
-        else if (request.type == RequestType.overtime)
-          _buildOvertimeDetails()
-        else if (request.type == RequestType.attendanceCorrection)
-            _buildCorrectionDetails()
+        if (req.type == RequestType.leave)
+          _buildLeaveDetails(req)
+        else if (req.type == RequestType.overtime)
+          _buildOvertimeDetails(req)
+        else if (req.type == RequestType.attendanceCorrection)
+            _buildCorrectionDetails(req)
           else
             SizedBox(),
       ],
@@ -221,33 +273,37 @@ class ViewRequestScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildLeaveDetails() {
-    final data = request.data;
+  Widget _buildLeaveDetails(Request req) {
+    final leaveTypeStr = req.data['leaveType'] as String?;
+    final leaveTypeEnum = leaveTypeStr != null
+        ? LeaveRequestType.values.firstWhere(
+          (e) => e.name == leaveTypeStr,
+      orElse: () => LeaveRequestType.sick,
+    )
+        : null;
     return _buildRequestDetailsContainer([
-      {'label': 'Leave Type', 'value': data['leaveType']?.toString() ?? 'N/A'},
-      {'label': 'Start Date', 'value': data['startDate']?.toString() ?? 'N/A'},
-      {'label': 'End Date', 'value': data['endDate']?.toString() ?? 'N/A'},
-      {'label': 'Reason', 'value': data['reason']?.toString() ?? 'N/A', 'isMultiline': true},
+      {'label': 'Leave Type', 'value': leaveTypeEnum?.label ?? 'N/A'},
+      {'label': 'Start Date', 'value': req.leaveStartDate ?? 'N/A'},
+      {'label': 'End Date', 'value': req.leaveEndDate ?? 'N/A'},
+      {'label': 'Reason', 'value': req.leaveReason ?? 'N/A', 'isMultiline': true},
     ]);
   }
 
-  Widget _buildOvertimeDetails() {
-    final data = request.data;
+  Widget _buildOvertimeDetails(Request req) {
     return _buildRequestDetailsContainer([
-      {'label': 'Date', 'value': data['date']?.toString() ?? 'N/A'},
-      {'label': 'Duration', 'value': data['hours']?.toString() ?? 'N/A'},
-      {'label': 'Reason', 'value': data['reason']?.toString() ?? 'N/A', 'isMultiline': true},
+      {'label': 'Date', 'value': req.overTimeDate ?? 'N/A'},
+      {'label': 'Duration', 'value': req.overTimeHours ?? 'N/A'},
+      {'label': 'Reason', 'value': req.overTimeReason ?? 'N/A', 'isMultiline': true},
     ]);
   }
 
-  Widget _buildCorrectionDetails() {
-    final data = request.data;
+  Widget _buildCorrectionDetails(Request req) {
     return _buildRequestDetailsContainer([
-      {'label': 'Date', 'value': data['date']?.toString() ?? 'N/A'},
-      {'label': 'Correction Type', 'value': data['correctionType']?.toString() ?? 'N/A'},
-      {'label': 'Actual Time', 'value': data['actualTime']?.toString() ?? 'N/A'},
-      {'label': 'Correct Time', 'value': data['correctTime']?.toString() ?? 'N/A'},
-      {'label': 'Reason', 'value': data['reason']?.toString() ?? 'N/A', 'isMultiline': true},
+      {'label': 'Date', 'value': req.correctionDate ?? 'N/A'},
+      {'label': 'Correction Type', 'value': req.correctionType ?? 'N/A'},
+      {'label': 'Actual Time', 'value': req.correctionActualTime ?? 'N/A'},
+      {'label': 'Correct Time', 'value': req.correctionCorrectTime ?? 'N/A'},
+      {'label': 'Reason', 'value': req.correctionReason ?? 'N/A', 'isMultiline': true},
     ]);
   }
 
@@ -282,7 +338,7 @@ class ViewRequestScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildRemarksSection() {
+  Widget _buildRemarksSection(Request req) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -296,14 +352,14 @@ class ViewRequestScreen extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         Container(
+          width: double.infinity,
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: Colors.grey[50],
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey[300]!),
           ),
           child: Text(
-            request.remarks!,
+            req.remarks!,
             style: const TextStyle(
               fontSize: 14,
               color: Colors.black87,

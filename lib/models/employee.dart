@@ -2,6 +2,7 @@ import 'package:ess/enums/account_enum.dart';
 
 class Employee {
   final String id;
+  final String employeeId;
   final String email;
   final String firstName;
   final String lastName;
@@ -16,6 +17,7 @@ class Employee {
 
   Employee({
     required this.id,
+    required this.employeeId,
     required this.email,
     required this.firstName,
     required this.lastName,
@@ -33,6 +35,7 @@ class Employee {
   factory Employee.fromJson(Map<String, dynamic> json) {
     return Employee(
       id: json['id'] as String,
+      employeeId: json['employeeId'] as String,
       email: json['email'] as String,
       firstName: json['firstName'] as String,
       lastName: json['lastName'] as String,
@@ -57,6 +60,7 @@ class Employee {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
+      'employeeId': employeeId,
       'email': email,
       'firstName': firstName,
       'lastName': lastName,
@@ -82,6 +86,7 @@ class Employee {
   // Mutable copy
   Employee copyWith({
     String? id,
+    String? employeeId,
     String? email,
     String? firstName,
     String? lastName,
@@ -96,6 +101,7 @@ class Employee {
   }) {
     return Employee(
       id: id ?? this.id,
+      employeeId: employeeId ?? this.employeeId,
       email: email ?? this.email,
       firstName: firstName ?? this.firstName,
       lastName: lastName ?? this.lastName,
