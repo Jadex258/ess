@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ess/enums/account_enum.dart';
 import 'package:ess/models/employee.dart';
+import 'package:ess/utils/helper.dart';
 import 'firebase_auth_service.dart';
 
 class EmployeeService {
@@ -77,7 +78,7 @@ class EmployeeService {
     try {
       final querySnapshot = await _firestore
           .collection(_collection)
-          .where('id', isEqualTo: employeeId)
+          .where('employeeId', isEqualTo: employeeId)
           .limit(1)
           .get();
 
@@ -88,6 +89,49 @@ class EmployeeService {
       return querySnapshot.docs.first.data()['email'] as String;
     } catch (e) {
       throw Exception('Failed to fetch email: ${e.toString()}');
+    }
+  }
+
+  static Stream<Map<String, dynamic>> streamQRToken() async* {
+    int retryCount = 0;
+    const maxRetries = 1;
+
+    while (true) {
+      try {
+        final token = generateSecureToken();
+        final now = DateTime.now();
+        final expiresAt = now.add(const Duration(minutes: 2));
+
+        await _firestore.collection('qr_tokens').doc(_currentUserId).set({
+          't': token,
+          'e': expiresAt.millisecondsSinceEpoch,
+          'u': now.millisecondsSinceEpoch,
+        }, SetOptions(merge: true));
+
+        yield {
+          't': token,
+          'e': expiresAt.millisecondsSinceEpoch,
+          'u': now.millisecondsSinceEpoch,
+          'error': null,
+        };
+
+        retryCount = 0;
+        await Future.delayed(const Duration(minutes: 2));
+      } catch (e) {
+        if (retryCount < maxRetries) {
+          retryCount++;
+          await Future.delayed(const Duration(seconds: 2));
+          continue;
+        }
+
+        yield {
+          't': null,
+          'e': null,
+          'u': null,
+          'error': e.toString(),
+        };
+        break;
+      }
     }
   }
 }

@@ -1,9 +1,11 @@
 import 'package:ess/enums/account_enum.dart';
+import 'package:ess/main.dart';
 import 'package:ess/models/employee.dart';
 import 'package:ess/provider/employee_provider.dart';
 import 'package:ess/screens/authentication/login.dart';
 import 'package:ess/screens/profile/edit_profile.dart';
 import 'package:ess/services/firebase_auth_service.dart';
+import 'package:ess/services/local_notification_service.dart';
 import 'package:ess/widgets/app_bar.dart';
 import 'package:ess/widgets/empty_widget.dart';
 import 'package:flutter/cupertino.dart';
@@ -26,13 +28,7 @@ class ViewProfileScreen extends StatelessWidget {
       );
       await Future.delayed(const Duration(milliseconds: 500));
       await FirebaseAuthService.logout();
-      pushWithoutNavBar(
-        context,
-        CupertinoPageRoute(
-          builder: (context) => const LoginScreen(),
-        ),
-      );
-      popAllScreensOfCurrentTab(context);
+      navigatorKey.currentState?.pushAndRemoveUntil( CupertinoPageRoute(builder: (_) => const LoginScreen()), (route) => false, );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -134,6 +130,8 @@ class ViewProfileScreen extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 16),
+                      _buildInfoCard(label: 'Employee ID', value: employee.employeeId),
+                      const SizedBox(height: 8),
                       _buildInfoCard(label: 'Full name', value: employee.fullName),
                       const SizedBox(height: 8),
                       _buildInfoCard(label: 'Address', value: employee.address ?? 'Not provided'),
@@ -167,6 +165,7 @@ class ViewProfileScreen extends StatelessWidget {
                           ),
                         ),
                       ),
+                      const SizedBox(height: 16),
                     ],
                   );
                 },
@@ -181,7 +180,7 @@ class ViewProfileScreen extends StatelessWidget {
   Widget _buildInfoCard({required String label, required String value}) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
         color: const Color(0xFFF5F5F5),
         borderRadius: BorderRadius.circular(12),
@@ -195,7 +194,6 @@ class ViewProfileScreen extends StatelessWidget {
                 color: Colors.grey[600],
                 fontWeight: FontWeight.w500,
               )),
-          const SizedBox(height: 4),
           Text(value,
               style: const TextStyle(
                 fontSize: 14,

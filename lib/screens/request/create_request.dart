@@ -52,7 +52,7 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
   Future<void> _selectDate(DateTime? currentDate, Function(DateTime) onDateSelected) async {
     final picked = await showDatePicker(
       context: context,
-      initialDate: currentDate ?? DateTime.now(),
+      initialDate: currentDate ?? _startDate ?? DateTime.now(),
       firstDate: DateTime(2020),
       lastDate: DateTime(2030),
     );
@@ -60,6 +60,48 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
       onDateSelected(picked);
     }
   }
+
+
+  Future<void> _selectStartDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _startDate ?? DateTime.now(),
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2030),
+    );
+
+    if (picked != null) {
+      setState(() {
+        _startDate = picked;
+        _leaveStartDateController.text = formatDate(picked);
+
+        // Auto-fix invalid end date
+        if (_endDate != null && _endDate!.isBefore(picked)) {
+          _endDate = picked;
+          _leaveEndDateController.text = formatDate(picked);
+        }
+      });
+    }
+  }
+
+  Future<void> _selectEndDate() async {
+    if (_startDate == null) return; // block UI tap if start not selected
+
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _endDate ?? _startDate!,
+      firstDate: _startDate!,        // cannot pick before start date
+      lastDate: DateTime(2030),
+    );
+
+    if (picked != null) {
+      setState(() {
+        _endDate = picked;
+        _leaveEndDateController.text = formatDate(picked);
+      });
+    }
+  }
+
 
 
   void _handleCreateRequest() async {
@@ -217,15 +259,7 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
           },
         ),
         GestureDetector(
-          onTap: () => _selectDate(_startDate, (date) {
-            setState(() {
-              _startDate = date;
-              _leaveStartDateController.text = formatDate(_startDate);
-              if (_endDate != null && _endDate!.isBefore(_startDate!)) {
-                _endDate = _startDate;
-              }
-            });
-          }),
+          onTap:  _selectStartDate,
           child: AbsorbPointer(
             child: CustomTextField(
               controller: _leaveStartDateController,
@@ -239,12 +273,7 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
           ),
         ),
         GestureDetector(
-          onTap: () => _selectDate(_endDate ?? _startDate, (date) {
-            setState(() {
-              _endDate = date;
-              _leaveEndDateController.text = formatDate(_endDate);
-            });
-          }),
+          onTap: _startDate == null ? null : _selectEndDate,
           child: AbsorbPointer(
             child: CustomTextField(
               controller: _leaveEndDateController,

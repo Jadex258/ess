@@ -1,6 +1,5 @@
-import 'package:ess/enums/attendance_enums.dart';
 import 'package:ess/enums/skeleton_loading_enum.dart';
-import 'package:ess/models/attendance_log.dart';
+import 'package:ess/main.dart';
 import 'package:ess/models/attendance_record.dart';
 import 'package:ess/models/request.dart';
 import 'package:ess/provider/employee_provider.dart';
@@ -9,6 +8,7 @@ import 'package:ess/provider/notification_provider.dart';
 import 'package:ess/screens/attendance_list.dart';
 import 'package:ess/screens/notification.dart';
 import 'package:ess/services/attendance_service.dart';
+import 'package:ess/services/local_notification_service.dart';
 import 'package:ess/services/notification_service.dart';
 import 'package:ess/services/quote_service.dart';
 import 'package:ess/services/request_service.dart';
@@ -36,9 +36,16 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    _initAsyncFireAndForget();
+  }
+
+  void _initAsyncFireAndForget() {
+    LocalNotificationService.init(context).catchError((e, st) {
+    });
     final notifProvider = context.read<NotificationProvider>();
     notifProvider.initialize();
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -76,13 +83,16 @@ class _HomeScreenState extends State<HomeScreen> {
               child: IconButton(
                 icon: const Icon(Icons.notifications, size: 26, color: Color(0xFF2896FD)),
                 onPressed: () {
+                  if (appRouteObserver.currentRouteName == '/notifications') return;
                   pushWithoutNavBar(
                     context,
                     CupertinoPageRoute(
-                      builder: (context) => const NotificationScreen(),
+                      settings: const RouteSettings(name: '/notifications'),
+                      builder: (_) => NotificationScreen(),
                     ),
                   );
                 },
+
               ),
             );
           },
@@ -512,7 +522,6 @@ class _HomeScreenState extends State<HomeScreen> {
             },
           );
         }
-
         return AnimatedSize(
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeInOut,
@@ -530,63 +539,65 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildRequestItem(
-    Request req,
-    String title,
-    String subtitle,
-    String date,
-    String status,
-  ) {
-    return ListTile(
-      onTap: (){
-        pushWithoutNavBar(
-          context,
-          CupertinoPageRoute(
-            builder: (context) => ViewRequestScreen(request: req),
-          ),
-        );
-      },
-      contentPadding: EdgeInsets.zero,
-      visualDensity: VisualDensity(horizontal: -4, vertical: -4),
-      title: Text(
-        title,
-        style: const TextStyle(
-          fontSize: 15,
-          fontWeight: FontWeight.w500,
-          color: Colors.black87,
-        ),
-      ),
-      subtitle: Text(
-        subtitle,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: const TextStyle(fontSize: 12, color: Colors.grey),
-      ),
-      trailing: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                date,
-                style: const TextStyle(fontSize: 13, color: Colors.black87),
-              ),
-            ],
-          ),
-          const Text(
-            'Pending',
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.blue,
-              fontWeight: FontWeight.w300,
+    Widget _buildRequestItem(
+      Request req,
+      String title,
+      String subtitle,
+      String date,
+      String status,
+    ) {
+      return ListTile(
+        onTap: (){
+          pushWithoutNavBar(
+            context,
+            CupertinoPageRoute(
+              builder: (context) => ViewRequestScreen(request: req),
             ),
+          );
+        },
+        contentPadding: EdgeInsets.zero,
+        visualDensity: VisualDensity.compact,
+        dense: true,
+        title: Text(
+          title,
+          style: const TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w500,
+            color: Colors.black87,
+            height: 1
           ),
-        ],
-      ),
-    );
-  }
+        ),
+        subtitle: Text(
+          subtitle,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(fontSize: 12, color: Colors.grey),
+        ),
+        trailing: Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  date,
+                  style: const TextStyle(fontSize: 13, color: Colors.black87),
+                ),
+              ],
+            ),
+            const Text(
+              'Pending',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.blue,
+                fontWeight: FontWeight.w300,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
 
   Widget _buildAttendanceList() {
     return StreamBuilder<List<AttendanceRecord>>(

@@ -1,8 +1,10 @@
+import 'package:ess/main.dart';
 import 'package:ess/widgets/app_bar.dart';
 import 'package:ess/screens/authentication/login.dart';
 import 'package:ess/services/firebase_auth_service.dart';
 import 'package:ess/services/employee_service.dart';
 import 'package:ess/widgets/bottom_navbar.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:ess/components/textformfield.dart';
 import 'package:ess/components/button.dart';
@@ -82,7 +84,7 @@ class _SetupAccountScreenState extends State<SetupAccountScreen> {
       if (!mounted) return;
       Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (_) => const LoginScreen()),
+        CupertinoPageRoute(builder: (_) => const AuthChecker()),
             (route) => false,
       );
     } catch (e) {

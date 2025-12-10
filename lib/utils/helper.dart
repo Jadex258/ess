@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:ess/enums/attendance_enums.dart';
 import 'package:flutter/material.dart';
 
@@ -75,3 +77,8 @@ Widget buildPesoRichText(String amount, double fontSize, FontWeight fontWeight, 
   );
 }
 
+
+String generateSecureToken() {
+  final random = Random.secure();
+  return List.generate(16, (_) => random.nextInt(16).toRadixString(16)).join();
+}

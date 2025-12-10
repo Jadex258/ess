@@ -8,21 +8,27 @@ import 'package:ess/screens/authentication/login.dart';
 import 'package:ess/services/firebase_auth_service.dart';
 import 'package:ess/services/employee_service.dart';
 import 'package:ess/services/local_notification_service.dart';
+import 'package:ess/utils/app_route_observer.dart';
 import 'package:ess/widgets/bottom_navbar.dart';
 import 'package:ess/widgets/empty_widget.dart';
 import 'package:ess/widgets/loading_widget.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'models/employee.dart';
+
+
+final AppRouteObserver appRouteObserver = AppRouteObserver();
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  await LocalNotificationService.init();
   runApp(const MyApp());
 }
 
@@ -41,6 +47,7 @@ class MyApp extends StatelessWidget {
       child: MaterialApp(
         title: 'Cenixys ESS',
         navigatorKey: navigatorKey,
+        navigatorObservers: [appRouteObserver],
         theme: ThemeData(
           fontFamily: 'Poppins',
           colorScheme: const ColorScheme.light(
@@ -104,7 +111,7 @@ class _AuthCheckerState extends State<AuthChecker> {
       if (!mounted) return;
       Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (_) => const LoginScreen()),
+        CupertinoPageRoute(builder: (_) => const LoginScreen()),
             (route) => false,
       );
     } catch (e) {
