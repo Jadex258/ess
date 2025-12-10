@@ -10,7 +10,7 @@ enum RequestType {
       case RequestType.overtime:
         return 'Overtime Request';
       case RequestType.attendanceCorrection:
-        return 'Attendance Correction';
+        return 'Correction Request';
     }
   }
 }

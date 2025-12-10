@@ -61,18 +61,22 @@ class Request {
   String? get leaveStartDate => data['startDate'] as String?;
   String? get leaveEndDate => data['endDate'] as String?;
   String? get leaveReason => data['reason'] as String?;
+
   // Helpers for overtime request
   String? get overTimeDate => data['date'] as String?;
-  String? get overTimeHours => data['hours'] as String?;
+  String? get overTimeHours {
+    final val = data['hours'];
+    if (val == null) return null;
+    return val.toString();
+  }
   String? get overTimeReason => data['reason'] as String?;
 
+  // Helpers for correction request
   String? get correctionDate => data['date'] as String?;
   String? get correctionType => data['correctionType'] as String?;
   String? get correctionActualTime => data['actualTime'] as String?;
   String? get correctionCorrectTime => data['correctTime'] as String?;
   String? get correctionReason => data['reason'] as String?;
-
-  // Helpers for correction request
 
 
   bool get isPending => status == RequestStatus.pending;

@@ -1,33 +1,15 @@
 import 'package:ess/models/payslip.dart';
 import 'package:ess/screens/payslip/view_payslip.dart';
+import 'package:ess/services/payslip_service.dart';
 import 'package:ess/widgets/app_bar.dart';
+import 'package:ess/widgets/empty_widget.dart';
+import 'package:ess/widgets/loading_widget.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:persistent_bottom_nav_bar_v2/persistent_bottom_nav_bar_v2.dart';
 
 class PayslipListScreen extends StatelessWidget {
   const PayslipListScreen({super.key});
-
-  // Dummy payslip data creation
-  Payslip createDummyPayslip() {
-    return Payslip(
-      id: 'PSL-2024-12-001',
-      employeeId: 'EMP-001',
-      period: 'December 1-15, 2024',
-      generatedAt: DateTime(2024, 12, 15, 14, 30),
-      basicPay: 15000.00,
-      allowances: 2500.00,
-      overtime: 1250.50,
-      deductions: 1850.75,
-      netPay: 15000.00 + 2500.00 + 1250.50 - 1850.75,
-      deductionBreakdown: {
-        'SSS': 750.25,
-        'PhilHealth': 375.50,
-        'Pag-IBIG': 200.00,
-        'Tax': 525.00,
-      },
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -37,40 +19,61 @@ class PayslipListScreen extends StatelessWidget {
         bgColor: const Color(0xFFF5F5F5),
         title: 'Payslips',
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildTotalNetPayCard(),
-            const SizedBox(height: 24),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Total Deductions',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black87,
-                    ),
+      body: StreamBuilder<List<Payslip>>(
+        stream: PayslipService.streamPayslips(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const LoadingWidget(loadingText: "Getting attendance...",);
+          }
+
+          if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            return EmptyWidget(
+              title: 'No payslips found.',
+            );
+          }
+
+          final payslips = snapshot.data!;
+
+          return SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildTotalNetPayCard(payslips),
+                const SizedBox(height: 24),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Total Deductions',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      _buildDeductionsRow(payslips),
+                    ],
                   ),
-                  const SizedBox(height: 12),
-                  _buildDeductionsRow(),
-                ],
-              ),
+                ),
+                const SizedBox(height: 24),
+                _buildPayslipsList(context, payslips),
+              ],
             ),
-            const SizedBox(height: 24),
-            _buildPayslipsList(context),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
 
 
-  Widget _buildTotalNetPayCard() {
+  Widget _buildTotalNetPayCard(List<Payslip> payslips) {
+    final totalNetPay = payslips.fold<double>(
+      0.0, (sum, payslip) => sum + payslip.netPay,
+    );
+
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -80,8 +83,8 @@ class PayslipListScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
-        children: const [
-          Text(
+        children: [
+          const Text(
             'Total Net Pay',
             style: TextStyle(
               fontSize: 16,
@@ -89,44 +92,74 @@ class PayslipListScreen extends StatelessWidget {
               fontWeight: FontWeight.w400,
             ),
           ),
-          SizedBox(height: 8),
-          Text(
-            '\$34,567.89',
-            style: TextStyle(
-              fontSize: 36,
-              color: Colors.black,
-              fontWeight: FontWeight.bold,
+          const SizedBox(height: 8),
+          RichText(
+            text: TextSpan(
+              children: [
+                const TextSpan(
+                  text: '₱',
+                  style: TextStyle(
+                    fontFamily: 'Material Icons',
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
+                ),
+                TextSpan(
+                  text: totalNetPay.toStringAsFixed(2),
+                  style: const TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'Poppins',
+                    color: Colors.black,
+                  ),
+                ),
+              ],
             ),
-          ),
+          )
+
         ],
       ),
     );
   }
 
-  Widget _buildDeductionsRow() {
+  Widget _buildDeductionsRow(List<Payslip> payslips) {
+    final Map<String, double> totalDeductions = {};
+
+    for (var payslip in payslips) {
+      if (payslip.deductionBreakdown != null) {
+        payslip.deductionBreakdown!.forEach((key, value) {
+          totalDeductions[key] = (totalDeductions[key] ?? 0.0) + value;
+        });
+      }
+    }
+
+    if (totalDeductions.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: const Text(
+            'No deductions',
+            style: TextStyle(
+              color: Colors.grey,
+            ),
+          ),
+        ),
+      );
+    }
+
     return Wrap(
       spacing: 12,
       runSpacing: 12,
-      children: [
-        _buildDeductionCard(
-          title: 'PhilHealth',
-          amount: '\$700.9',
-        ),
-        _buildDeductionCard(
-          title: 'SSS',
-          amount: '\$8.9',
-        ),
-        _buildDeductionCard(
-          title: 'Pag Ibig',
-          amount: '\$8.9',
-        ),
-        _buildDeductionCard(
-          title: 'Tax',
-          amount: '\$8.9',
-        ),
-      ],
+      children: totalDeductions.entries.map((entry) {
+        return _buildDeductionCard(
+          title: entry.key,
+          amount: entry.value.toStringAsFixed(2),
+        );
+      }).toList(),
     );
   }
+
 
   Widget _buildDeductionCard({
     required String title,
@@ -160,17 +193,34 @@ class PayslipListScreen extends StatelessWidget {
               ),
               const SizedBox(width:2),
               Flexible(
-                child: Text(
-                  amount,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black,
-                  ),
+                child: RichText(
+                  textAlign: TextAlign.center,
                   overflow: TextOverflow.ellipsis,
                   maxLines: 1,
-                  textAlign: TextAlign.center,
-                ),
+                  text: TextSpan(
+                    children: [
+                      const TextSpan(
+                        text: '₱',
+                        style: TextStyle(
+                          fontFamily: 'Material Icons',
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black,
+                        ),
+                      ),
+                      TextSpan(
+                        text: amount,
+                        style: const TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black,
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+
               ),
             ],
           ),
@@ -179,33 +229,14 @@ class PayslipListScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildPayslipsList(BuildContext context) {
-    final List<Map<String, String>> payslips = [
-      {
-        'title': 'November pay',
-        'date': '2 December 2025 3:41 pm',
-        'amount': '\$200.00',
-      },
-      {
-        'title': 'October pay',
-        'date': '2 September 2025 3:41 pm',
-        'amount': '\$200.00',
-      },
-      {
-        'title': 'September pay',
-        'date': '2 August 2025 3:41 pm',
-        'amount': '\$200.00',
-      },
-    ];
+  Widget _buildPayslipsList(BuildContext context, List<Payslip> payslips) {
     return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-      ),
+      color: Colors.white,
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
+          const Text(
             'Payslips',
             style: TextStyle(
               fontSize: 16,
@@ -213,20 +244,15 @@ class PayslipListScreen extends StatelessWidget {
               color: Colors.black87,
             ),
           ),
-          const SizedBox(height: 12),
-          ...payslips.map((slip) {
-            return Column(
-              children: [
-                _buildPayslipItem(
-                  context,
-                  title: slip['title']!,
-                  date: slip['date']!,
-                  amount: slip['amount']!,
-                ),
-                const SizedBox(height: 12),
-              ],
-            );
-          }),
+          const SizedBox(height: 6),
+          ...payslips.map((p) => Column(
+            children: [
+              _buildPayslipItem(
+                context,
+                payslip: p,
+              ),
+            ],
+          )),
         ],
       ),
     );
@@ -235,24 +261,21 @@ class PayslipListScreen extends StatelessWidget {
 
   Widget _buildPayslipItem(
       BuildContext context, {
-        required String title,
-        required String date,
-        required String amount,
+        required Payslip payslip,
       }) {
+    final formattedDate = "${payslip.generatedAt.toLocal()}".split(".")[0];
+
     return ListTile(
       onTap: () {
         pushWithoutNavBar(
           context,
           CupertinoPageRoute(
-            builder: (context) => ViewPayslipScreen(
-              payslip: createDummyPayslip(),
-            ),
+            builder: (context) => ViewPayslipScreen(payslip: payslip),
           ),
         );
       },
       visualDensity: VisualDensity(vertical: -4),
       contentPadding: EdgeInsets.zero,
-      minVerticalPadding: 0,
       dense: true,
       leading: const Icon(
         Icons.monetization_on_outlined,
@@ -260,7 +283,7 @@ class PayslipListScreen extends StatelessWidget {
         size: 24,
       ),
       title: Text(
-        title,
+        payslip.period,
         style: const TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.w500,
@@ -268,17 +291,35 @@ class PayslipListScreen extends StatelessWidget {
         ),
       ),
       subtitle: Text(
-        date,
+        formattedDate,
         style: TextStyle(fontSize: 12, color: Colors.grey[600]),
       ),
-      trailing: Text(
-        amount,
-        style: const TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w500,
-          color: Colors.black,
+      trailing: RichText(
+        text: TextSpan(
+          children: [
+            const TextSpan(
+              text: '₱',
+              style: TextStyle(
+                fontFamily: 'Material Icons',
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: Colors.black,
+              ),
+            ),
+            TextSpan(
+              text: payslip.netPay.toStringAsFixed(2),
+              style: const TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: Colors.black,
+              ),
+            ),
+          ],
         ),
-      ),
+      )
+
     );
   }
+
 }

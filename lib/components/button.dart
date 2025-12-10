@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 class PrimaryButton extends StatefulWidget {
@@ -42,9 +43,9 @@ class _PrimaryButtonState extends State<PrimaryButton> {
             ? const SizedBox(
           height: 20,
           width: 20,
-          child: CircularProgressIndicator(
-            strokeWidth: 2.5,
-            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+          child: CupertinoActivityIndicator(
+            color: Colors.white,
+            radius: 14,
           ),
         )
             : Row(
@@ -112,13 +113,14 @@ class _SecondaryButtonState extends State<SecondaryButton> {
           ),
         ),
         child: widget.isLoading
-            ? const SizedBox(
+            ? SizedBox(
           height: 20,
           width: 20,
-          child: CircularProgressIndicator(
-            strokeWidth: 2.5,
-            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF2896FD)),
+          child: const CupertinoActivityIndicator(
+            color: Color(0xFF2896FD),
+            radius: 14,
           ),
+
         )
             : Row(
           mainAxisAlignment: MainAxisAlignment.center,

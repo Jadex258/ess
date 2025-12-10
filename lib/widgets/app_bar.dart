@@ -1,24 +1,26 @@
 import 'package:flutter/material.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
-  final String title;
+  final String? title;
+  final Widget? titleWidget;
   final Widget? trailing;
   final Color? bgColor;
 
   const CustomAppBar({
     super.key,
-    required this.title,
+    this.title,
+    this.titleWidget,
     this.trailing,
-    this.bgColor
-  });
+    this.bgColor,
+  }) : assert(title != null || titleWidget != null, 'Either title or titleWidget must be provided');
 
   @override
   Widget build(BuildContext context) {
     return AppBar(
       backgroundColor: bgColor,
       elevation: 0,
-      title: Text(
-        title,
+      title: titleWidget ?? Text(
+        title!,
         style: const TextStyle(
           fontFamily: 'Poppins',
           fontWeight: FontWeight.w400,

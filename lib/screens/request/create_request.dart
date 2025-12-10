@@ -2,6 +2,7 @@ import 'package:ess/components/button.dart';
 import 'package:ess/components/dropdown.dart';
 import 'package:ess/components/textformfield.dart';
 import 'package:ess/enums/request_enums.dart';
+import 'package:ess/services/request_service.dart';
 import 'package:ess/utils/format.dart';
 import 'package:ess/widgets/app_bar.dart';
 import 'package:flutter/material.dart';
@@ -15,7 +16,7 @@ class CreateRequestScreen extends StatefulWidget {
 
 class _CreateRequestScreenState extends State<CreateRequestScreen> {
   final _formKey = GlobalKey<FormState>();
-
+  bool isLoading = false;
   RequestType? _selectedRequestType = RequestType.leave;
 
   LeaveRequestType? _selectedLeaveType;
@@ -23,7 +24,6 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
   DateTime? _endDate;
   final _leaveReasonController = TextEditingController();
 
-  // Overtime request fields
   DateTime? _overtimeDate;
   final _overtimeHoursController = TextEditingController();
   final _overtimeReasonController = TextEditingController();
@@ -52,12 +52,123 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
   Future<void> _selectDate(DateTime? currentDate, Function(DateTime) onDateSelected) async {
     final picked = await showDatePicker(
       context: context,
-      initialDate: currentDate ?? DateTime.now(),
+      initialDate: currentDate ?? _startDate ?? DateTime.now(),
       firstDate: DateTime(2020),
       lastDate: DateTime(2030),
     );
     if (picked != null) {
       onDateSelected(picked);
+    }
+  }
+
+
+  Future<void> _selectStartDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _startDate ?? DateTime.now(),
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2030),
+    );
+
+    if (picked != null) {
+      setState(() {
+        _startDate = picked;
+        _leaveStartDateController.text = formatDate(picked);
+
+        // Auto-fix invalid end date
+        if (_endDate != null && _endDate!.isBefore(picked)) {
+          _endDate = picked;
+          _leaveEndDateController.text = formatDate(picked);
+        }
+      });
+    }
+  }
+
+  Future<void> _selectEndDate() async {
+    if (_startDate == null) return; // block UI tap if start not selected
+
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _endDate ?? _startDate!,
+      firstDate: _startDate!,        // cannot pick before start date
+      lastDate: DateTime(2030),
+    );
+
+    if (picked != null) {
+      setState(() {
+        _endDate = picked;
+        _leaveEndDateController.text = formatDate(picked);
+      });
+    }
+  }
+
+
+
+  void _handleCreateRequest() async {
+    if (_formKey.currentState!.validate()) {
+      try {
+        setState(() => isLoading = true);
+        if (_selectedRequestType == RequestType.leave) {
+          await RequestService.createLeaveRequest(
+            leaveType: _selectedLeaveType!,
+            startDate: _startDate!,
+            endDate: _endDate!,
+            reason: _leaveReasonController.text.trim(),
+          );
+        } else if (_selectedRequestType == RequestType.overtime) {
+           await RequestService.createOvertimeRequest(
+            date: _overtimeDate!,
+            hours: double.parse(_overtimeHoursController.text),
+            reason: _overtimeReasonController.text.trim(),
+          );
+        } else if (_selectedRequestType == RequestType.attendanceCorrection) {
+            await RequestService.createCorrectionRequest(
+            date: _correctionDate!,
+            correctionType: _selectedCorrectionType!,
+            actualTime: _actualTimeController.text.trim(),
+            correctTime: _correctTimeController.text.trim(),
+            reason: _correctionReasonController.text.trim(),
+          );
+        } else {
+          throw Exception('Unsupported request type');
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Request submitted successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        Navigator.pop(context);
+
+        _formKey.currentState!.reset();
+        setState(() {
+          _selectedRequestType = RequestType.leave;
+          _selectedLeaveType = null;
+          _startDate = null;
+          _endDate = null;
+          _overtimeDate = null;
+          _selectedCorrectionType = null;
+        });
+        _leaveReasonController.clear();
+        _overtimeHoursController.clear();
+        _overtimeReasonController.clear();
+        _actualTimeController.clear();
+        _correctTimeController.clear();
+        _correctionReasonController.clear();
+        _leaveStartDateController.clear();
+        _leaveEndDateController.clear();
+        _overtimeDateController.clear();
+        _correctionDateController.clear();
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to submit request: $e')),
+        );
+      }
+      finally {
+        setState(() => isLoading = false);
+      }
     }
   }
 
@@ -102,23 +213,8 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
               ],
               PrimaryButton(
                 text: 'Submit Request',
-                onPressed: _selectedRequestType == null
-                    ? null
-                    : () {
-                  if (_formKey.currentState!.validate()) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Submitting ${_selectedRequestType!.label}...'),
-                      ),
-                    );
-                  }
-                },
-              ),
-              const SizedBox(height: 8),
-              SecondaryButton(
-                text: 'View All Requests',
-                onPressed: () {
-                },
+                isLoading: isLoading,
+                onPressed: _handleCreateRequest,
               ),
             ],
           ),
@@ -163,15 +259,7 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
           },
         ),
         GestureDetector(
-          onTap: () => _selectDate(_startDate, (date) {
-            setState(() {
-              _startDate = date;
-              _leaveStartDateController.text = formatDate(_startDate);
-              if (_endDate != null && _endDate!.isBefore(_startDate!)) {
-                _endDate = _startDate;
-              }
-            });
-          }),
+          onTap:  _selectStartDate,
           child: AbsorbPointer(
             child: CustomTextField(
               controller: _leaveStartDateController,
@@ -185,12 +273,7 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
           ),
         ),
         GestureDetector(
-          onTap: () => _selectDate(_endDate ?? _startDate, (date) {
-            setState(() {
-              _endDate = date;
-              _leaveEndDateController.text = formatDate(_endDate);
-            });
-          }),
+          onTap: _startDate == null ? null : _selectEndDate,
           child: AbsorbPointer(
             child: CustomTextField(
               controller: _leaveEndDateController,

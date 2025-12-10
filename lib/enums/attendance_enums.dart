@@ -2,8 +2,7 @@ enum AttendanceType {
   regular,
   restDay,
   holiday,
-  leave,
-  absent;
+  leave;
 
   String get label {
     switch (this) {
@@ -15,8 +14,6 @@ enum AttendanceType {
         return 'Holiday';
       case AttendanceType.leave:
         return 'On Leave';
-      case AttendanceType.absent:
-        return 'Absent';
     }
   }
 }

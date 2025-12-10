@@ -1,5 +1,6 @@
 import 'package:ess/models/payslip.dart';
 import 'package:ess/utils/export_payslip.dart';
+import 'package:ess/utils/helper.dart';
 import 'package:ess/widgets/app_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -11,7 +12,12 @@ class ViewPayslipScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final currencyFormat = NumberFormat.currency(symbol: '\$', decimalDigits: 2);
+    final currencyFormat = NumberFormat.currency(
+      locale: 'en_PH',
+      symbol: '',
+      decimalDigits: 2,
+    );
+
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
       appBar: CustomAppBar(
@@ -24,20 +30,16 @@ class ViewPayslipScreen extends StatelessWidget {
       ),
       body: SingleChildScrollView(
         child: Column(
-          spacing: 16,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildNetPayCard(currencyFormat.format(payslip.netPay)),
+            _buildNetPayCard(currencyFormat),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                spacing: 12,
                 children: [
                   _buildInfoChip('Period', payslip.period),
-                  _buildInfoChip(
-                      'Generated',
-                      DateFormat('MMM d, yyyy').format(payslip.generatedAt)
-                  ),
+                  _buildInfoChip('Generated', DateFormat('MMM d, yyyy').format(payslip.generatedAt)),
                 ],
               ),
             ),
@@ -50,10 +52,10 @@ class ViewPayslipScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildNetPayCard(String formattedAmount) {
+  Widget _buildNetPayCard(NumberFormat currencyFormat) {
     return Container(
       width: double.infinity,
-      margin: const EdgeInsets.symmetric(horizontal: 16),
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
       decoration: BoxDecoration(
         color: const Color(0xFFEBEBEB),
@@ -69,15 +71,7 @@ class ViewPayslipScreen extends StatelessWidget {
               fontWeight: FontWeight.w400,
             ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            formattedAmount,
-            style: const TextStyle(
-              fontSize: 36,
-              color: Colors.black,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+          const SizedBox(height: 8),  buildPesoRichText(currencyFormat.format(payslip.netPay), 36, FontWeight.bold),
           const SizedBox(height: 4),
           Text(
             payslip.period,
@@ -92,39 +86,44 @@ class ViewPayslipScreen extends StatelessWidget {
   }
 
   Widget _buildInfoChip(String label, String value) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey[600],
-              fontWeight: FontWeight.w500,
+    return Expanded(
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey[600],
+                fontWeight: FontWeight.w500,
+              ),
             ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: Colors.black87,
+            const SizedBox(height: 4),
+            Text(
+              value,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Colors.black87,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildEarningsSection(NumberFormat currencyFormat) {
+    final totalEarnings = payslip.basicPay + payslip.allowances + payslip.overtime;
+
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -145,29 +144,13 @@ class ViewPayslipScreen extends StatelessWidget {
             ),
             child: Column(
               children: [
-                _buildEarningRow(
-                  label: 'Basic Pay',
-                  amount: currencyFormat.format(payslip.basicPay),
-                  isTotal: false,
-                ),
+                _buildEarningRow('Basic Pay', payslip.basicPay, currencyFormat),
                 const Divider(height: 16, color: Colors.grey),
-                _buildEarningRow(
-                  label: 'Allowances',
-                  amount: currencyFormat.format(payslip.allowances),
-                  isTotal: false,
-                ),
+                _buildEarningRow('Allowances', payslip.allowances, currencyFormat),
                 const Divider(height: 16, color: Colors.grey),
-                _buildEarningRow(
-                  label: 'Overtime',
-                  amount: currencyFormat.format(payslip.overtime),
-                  isTotal: false,
-                ),
+                _buildEarningRow('Overtime', payslip.overtime, currencyFormat),
                 const Divider(height: 16, color: Colors.grey),
-                _buildEarningRow(
-                  label: 'Total Earnings',
-                  amount: currencyFormat.format(payslip.basicPay + payslip.allowances + payslip.overtime),
-                  isTotal: true,
-                ),
+                _buildEarningRow('Total Earnings', totalEarnings, currencyFormat, isTotal: true),
               ],
             ),
           ),
@@ -176,11 +159,7 @@ class ViewPayslipScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildEarningRow({
-    required String label,
-    required String amount,
-    required bool isTotal,
-  }) {
+  Widget _buildEarningRow(String label, double amount, NumberFormat currencyFormat, {bool isTotal = false}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -191,14 +170,11 @@ class ViewPayslipScreen extends StatelessWidget {
             fontWeight: isTotal ? FontWeight.w600 : FontWeight.w400,
             color: isTotal ? Colors.black : Colors.black87,
           ),
-        ),
-        Text(
-          amount,
-          style: TextStyle(
-            fontSize: isTotal ? 16 : 14,
-            fontWeight: isTotal ? FontWeight.w600 : FontWeight.w400,
-            color: isTotal ? const Color(0xFF43A047) : Colors.black87,
-          ),
+        ),  buildPesoRichText(
+          currencyFormat.format(amount),
+          isTotal ? 16 : 14,
+          isTotal ? FontWeight.w600 : FontWeight.w400,
+          color: isTotal ? const Color(0xFF43A047) : Colors.black87,
         ),
       ],
     );
@@ -206,7 +182,7 @@ class ViewPayslipScreen extends StatelessWidget {
 
   Widget _buildDeductionsSection(NumberFormat currencyFormat) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -220,14 +196,11 @@ class ViewPayslipScreen extends StatelessWidget {
                   fontWeight: FontWeight.w600,
                   color: Colors.black87,
                 ),
-              ),
-              Text(
+              ),  buildPesoRichText(
                 currencyFormat.format(payslip.deductions),
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFFD32F2F),
-                ),
+                16,
+                FontWeight.w600,
+                color: const Color(0xFFD32F2F),
               ),
             ],
           ),
@@ -237,43 +210,22 @@ class ViewPayslipScreen extends StatelessWidget {
               spacing: 12,
               runSpacing: 12,
               children: payslip.deductionBreakdown!.entries.map((entry) {
-                return _buildDeductionCard(
-                  title: entry.key,
-                  amount: currencyFormat.format(entry.value),
-                );
+                return _buildDeductionCard(entry.key, entry.value, currencyFormat);
               }).toList(),
             )
-          else Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            children: [
-              _buildDeductionCard(
-                title: 'SSS',
-                amount: currencyFormat.format(payslip.deductions * 0.4),
+          else
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.all(8.0),
+                child: Text('No deductions', style: TextStyle(color: Colors.grey)),
               ),
-              _buildDeductionCard(
-                title: 'PhilHealth',
-                amount: currencyFormat.format(payslip.deductions * 0.2),
-              ),
-              _buildDeductionCard(
-                title: 'Pag-IBIG',
-                amount: currencyFormat.format(payslip.deductions * 0.1),
-              ),
-              _buildDeductionCard(
-                title: 'Tax',
-                amount: currencyFormat.format(payslip.deductions * 0.3),
-              ),
-            ],
-          ),
+            ),
         ],
       ),
     );
   }
 
-  Widget _buildDeductionCard({
-    required String title,
-    required String amount,
-  }) {
+  Widget _buildDeductionCard(String title, double amount, NumberFormat currencyFormat) {
     return Container(
       width: 100,
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
@@ -295,23 +247,15 @@ class ViewPayslipScreen extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(
-                Icons.arrow_downward,
-                color: Color(0xFFD32F2F),
-                size: 14,
-              ),
-              const SizedBox(width:2),
+              const Icon(Icons.arrow_downward, color: Color(0xFFD32F2F), size: 14),
+              const SizedBox(width: 2),
               Flexible(
-                child: Text(
-                  amount,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black,
-                  ),
-                  overflow: TextOverflow.ellipsis,
+                child: buildPesoRichText(
+                  currencyFormat.format(amount),
+                  14,
+                  FontWeight.w600,
+                  color: Colors.black,
                   maxLines: 1,
-                  textAlign: TextAlign.center,
                 ),
               ),
             ],
@@ -325,40 +269,22 @@ class ViewPayslipScreen extends StatelessWidget {
     final totalEarnings = payslip.basicPay + payslip.allowances + payslip.overtime;
 
     return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-      ),
+      padding: const EdgeInsets.all(16),
+      margin: EdgeInsets.only(top: 16),
+      decoration: BoxDecoration(color: Colors.white),
       child: Column(
         children: [
-          _buildSummaryRow(
-            label: 'Total Earnings',
-            amount: currencyFormat.format(totalEarnings),
-            isPositive: true,
-          ),
-          const SizedBox(height: 12),
-          _buildSummaryRow(
-            label: 'Total Deductions',
-            amount: currencyFormat.format(payslip.deductions),
-            isPositive: false,
-          ),
+          _buildSummaryRow('Total Earnings', totalEarnings, currencyFormat, isPositive: true),
+          const SizedBox(height: 6),
+          _buildSummaryRow('Total Deductions', payslip.deductions, currencyFormat, isPositive: false),
           const Divider(height: 20),
-          _buildSummaryRow(
-            label: 'Net Pay',
-            amount: currencyFormat.format(payslip.netPay),
-            isTotal: true,
-          ),
+          _buildSummaryRow('Net Pay', payslip.netPay, currencyFormat, isTotal: true),
         ],
       ),
     );
   }
 
-  Widget _buildSummaryRow({
-    required String label,
-    required String amount,
-    bool isPositive = true,
-    bool isTotal = false,
-  }) {
+  Widget _buildSummaryRow(String label, double amount, NumberFormat currencyFormat, {bool isPositive = true, bool isTotal = false}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -369,16 +295,13 @@ class ViewPayslipScreen extends StatelessWidget {
             fontWeight: isTotal ? FontWeight.w600 : FontWeight.w400,
             color: Colors.black87,
           ),
-        ),
-        Text(
-          amount,
-          style: TextStyle(
-            fontSize: isTotal ? 18 : 15,
-            fontWeight: isTotal ? FontWeight.bold : FontWeight.w600,
-            color: isTotal
-                ? const Color(0xFF43A047)
-                : (isPositive ? Colors.black87 : const Color(0xFFD32F2F)),
-          ),
+        ),  buildPesoRichText(
+          currencyFormat.format(amount),
+          isTotal ? 18 : 15,
+          isTotal ? FontWeight.bold : FontWeight.w600,
+          color: isTotal
+              ? const Color(0xFF43A047)
+              : (isPositive ? Colors.black87 : const Color(0xFFD32F2F)),
         ),
       ],
     );

@@ -1,3 +1,4 @@
+import 'package:ess/provider/navbar_provider.dart';
 import 'package:ess/screens/home.dart';
 import 'package:ess/screens/payslip/payslip_list.dart';
 import 'package:ess/screens/profile/view_profile.dart';
@@ -5,13 +6,16 @@ import 'package:ess/screens/qr.dart';
 import 'package:ess/screens/request/request_list.dart';
 import 'package:flutter/material.dart';
 import 'package:persistent_bottom_nav_bar_v2/persistent_bottom_nav_bar_v2.dart';
+import 'package:provider/provider.dart';
 
 class BottomNavbarWidget extends StatelessWidget {
   const BottomNavbarWidget({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final navbar = context.watch<NavbarProvider>();
     return PersistentTabView(
+      controller: navbar.controller,
       tabs: [
         PersistentTabConfig(
           screen: const HomeScreen(),

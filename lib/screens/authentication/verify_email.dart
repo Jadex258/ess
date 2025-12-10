@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-class Verification extends StatelessWidget {
-  const Verification({super.key});
+class VerificationScreen extends StatelessWidget {
+  const VerificationScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
