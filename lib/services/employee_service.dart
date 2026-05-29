@@ -1,12 +1,21 @@
+import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloudinary/cloudinary.dart';
 import 'package:ess/enums/account_enum.dart';
 import 'package:ess/models/employee.dart';
 import 'package:ess/utils/helper.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'firebase_auth_service.dart';
 
 class EmployeeService {
   static final _firestore = FirebaseFirestore.instance;
   static const _collection = 'employees';
+  static final _cloudinary = Cloudinary.signedConfig(
+    apiKey: dotenv.env['CLOUDINARY_API_KEY']!,
+    apiSecret: dotenv.env['CLOUDINARY_API_SECRET']!,
+    cloudName: dotenv.env['CLOUDINARY_CLOUD_NAME']!,
+  );
 
   // Get current user's employee ID
   static String get _currentUserId {
@@ -59,6 +68,69 @@ class EmployeeService {
       await _firestore.collection(_collection).doc(_currentUserId).update(updates);
     } catch (e) {
       throw Exception('Failed to update profile: ${e.toString()}');
+    }
+  }
+
+  static Future<Map<String, String>> uploadProfilePicture(File imageFile) async {
+    try {
+      final response = await _cloudinary.upload(
+        file: imageFile.path,
+        fileBytes: imageFile.readAsBytesSync(),
+        resourceType: CloudinaryResourceType.image,
+        folder: 'ess_profiles',
+      );
+
+      if (response.isSuccessful) {
+        return {
+          'imageUrl': response.secureUrl ?? '',
+          'publicId': response.publicId ?? '',
+        };
+      } else {
+        throw Exception('Upload failed: ${response.error}');
+      }
+    } catch (e) {
+      throw Exception('Failed to upload image: ${e.toString()}');
+    }
+  }
+
+  static Future<void> updateProfilePicture(File imageFile) async {
+    try {
+      final currentEmployee = await getEmployeeProfile();
+      if (currentEmployee.profilePicturePublicId != null) {
+        await _cloudinary.destroy(
+          currentEmployee.profilePicturePublicId!,
+          resourceType: CloudinaryResourceType.image,
+          invalidate: true,
+        );
+      }
+
+      final response = await uploadProfilePicture(imageFile);
+
+      await _firestore.collection(_collection).doc(_currentUserId).update({
+        'profilePictureUrl': response['imageUrl'],
+        'profilePicturePublicId': response['publicId']
+      });
+    } catch (e) {
+      throw Exception('Failed to update profile picture: ${e.toString()}');
+    }
+  }
+
+  static Future<void> deleteProfilePicture() async {
+    try {
+      final currentEmployee = await getEmployeeProfile();
+      if (currentEmployee.profilePicturePublicId != null) {
+        await _cloudinary.destroy(
+          currentEmployee.profilePicturePublicId!,
+          resourceType: CloudinaryResourceType.image,
+          invalidate: true,
+        );
+      }
+      await _firestore.collection(_collection).doc(_currentUserId).update({
+        'profilePictureUrl': null,
+        'profilePicturePublicId': null,
+      });
+    } catch (e) {
+      throw Exception('Failed to delete profile picture: ${e.toString()}');
     }
   }
 

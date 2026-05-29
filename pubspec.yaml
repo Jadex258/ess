@@ -33,6 +33,11 @@ dependencies:
   qr_flutter: ^4.1.0
   visibility_detector: ^0.4.0+2
   flutter_launcher_icons: ^0.14.4
+  cloudinary: ^1.2.0
+  image_picker: ^1.2.1
+  flutter_dotenv: ^6.0.0
+  cached_network_image: ^3.4.1
+  insta_image_viewer: ^1.0.4
 
 dev_dependencies:
   flutter_test:
@@ -63,10 +68,10 @@ flutter_launcher_icons:
 
 flutter:
   uses-material-design: true
-
   assets:
      - assets/images/
      - assets/animations/
+     - .env
 
 
   fonts:

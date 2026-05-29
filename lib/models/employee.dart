@@ -9,6 +9,8 @@ class Employee {
   final String? middleName;
   final String? phoneNumber;
   final String? address;
+  final String? profilePictureUrl;
+  final String? profilePicturePublicId;
   final String department;
   final String position;
   final EmploymentType employmentType;
@@ -24,6 +26,8 @@ class Employee {
     this.middleName,
     this.phoneNumber,
     this.address,
+    this.profilePictureUrl,
+    this.profilePicturePublicId,
     required this.department,
     required this.position,
     required this.employmentType,
@@ -42,6 +46,8 @@ class Employee {
       middleName: json['middleName'] as String?,
       phoneNumber: json['phoneNumber'] as String?,
       address: json['address'] as String?,
+      profilePictureUrl: json['profilePictureUrl'] as String?,
+      profilePicturePublicId: json['profilePicturePublicId'] as String?,
       department: json['department'] as String,
       position: json['position'] as String,
       employmentType: EmploymentType.values.firstWhere(
@@ -67,6 +73,8 @@ class Employee {
       'middleName': middleName,
       'phoneNumber': phoneNumber,
       'address': address,
+      'profilePictureUrl': profilePictureUrl,
+      'profilePicturePublicId': profilePicturePublicId,
       'department': department,
       'position': position,
       'employmentType': employmentType,
@@ -93,6 +101,8 @@ class Employee {
     String? middleName,
     String? phoneNumber,
     String? address,
+    String? profilePictureUrl,
+    String? profilePicturePublicId,
     String? department,
     String? position,
     EmploymentType? employmentType,
@@ -108,6 +118,8 @@ class Employee {
       middleName: middleName ?? this.middleName,
       phoneNumber: phoneNumber ?? this.phoneNumber,
       address: address ?? this.address,
+      profilePictureUrl: profilePictureUrl ?? this.profilePictureUrl,
+      profilePicturePublicId: profilePicturePublicId ?? this.profilePicturePublicId,
       department: department ?? this.department,
       position: position ?? this.position,
       employmentType: employmentType ?? this.employmentType,

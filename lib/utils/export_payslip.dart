@@ -77,6 +77,7 @@ class PayslipDownloadHelper {
 
     final employeeProvider = Provider.of<EmployeeProvider>(context, listen: false);
     final employeeName = employeeProvider.employee?.fullName ?? 'Employee Name';
+    final employeeId = employeeProvider.employee?.employeeId ?? 'N/A';
 
     pw.Widget pesoText(String amount, {bool isBold = false}) {
       return pw.RichText(
@@ -126,7 +127,7 @@ class PayslipDownloadHelper {
                     crossAxisAlignment: pw.CrossAxisAlignment.start,
                     children: [
                       pw.Text('Employee: $employeeName', style: pw.TextStyle(font: poppins)),
-                      pw.Text('Employee ID: ${payslip.employeeId}', style: pw.TextStyle(font: poppins)),
+                      pw.Text('Employee ID: $employeeId', style: pw.TextStyle(font: poppins)),
                       pw.Text('Period: ${payslip.period}', style: pw.TextStyle(font: poppins)),
                     ],
                   ),

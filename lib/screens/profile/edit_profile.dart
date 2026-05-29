@@ -1,6 +1,6 @@
+import 'dart:io';
 import 'package:ess/components/button.dart';
 import 'package:ess/components/textformfield.dart';
-import 'package:ess/enums/account_enum.dart';
 import 'package:ess/models/employee.dart';
 import 'package:ess/provider/employee_provider.dart';
 import 'package:ess/services/employee_service.dart';
@@ -8,7 +8,9 @@ import 'package:ess/services/firebase_auth_service.dart';
 import 'package:ess/widgets/app_bar.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -20,6 +22,9 @@ class EditProfileScreen extends StatefulWidget {
 class _EditProfileScreenState extends State<EditProfileScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final _formKey = GlobalKey<FormState>();
+  File? _selectedImage;
+  final ImagePicker _picker = ImagePicker();
+  bool _isUploadingImage = false;
   bool _isLoading = false;
 
   // Editable fields controllers
@@ -197,6 +202,72 @@ class _EditProfileScreenState extends State<EditProfileScreen> with SingleTicker
     }
   }
 
+  Future<void> _pickImage(ImageSource source, Employee employee) async {
+    try {
+      final XFile? image = await _picker.pickImage(
+        source: source,
+        maxWidth: 800,
+        maxHeight: 800,
+        imageQuality: 85,
+      );
+
+      if (image != null) {
+        setState(() => _isUploadingImage = true);
+
+        final imageFile = File(image.path);
+        await EmployeeService.updateProfilePicture(imageFile);
+
+        // Fetch updated employee
+        final updatedEmployee = await EmployeeService.getEmployeeProfile();
+        context.read<EmployeeProvider>().setEmployee(updatedEmployee);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Profile picture updated'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to update picture: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      setState(() => _isUploadingImage = false);
+    }
+  }
+
+// Add remove method
+  Future<void> _removeProfilePicture(Employee employee) async {
+    try {
+      setState(() => _isUploadingImage = true);
+
+      await EmployeeService.deleteProfilePicture();
+
+      final updatedEmployee = await EmployeeService.getEmployeeProfile();
+      context.read<EmployeeProvider>().setEmployee(updatedEmployee);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Profile picture removed'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to remove picture: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      setState(() => _isUploadingImage = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<EmployeeProvider>(
@@ -250,22 +321,95 @@ class _EditProfileScreenState extends State<EditProfileScreen> with SingleTicker
   }
 
   Widget _buildProfileHeader(Employee employee) {
+    String initials = '';
+    if (employee.firstName.isNotEmpty) initials += employee.firstName[0];
+    if (employee.lastName.isNotEmpty) initials += employee.lastName[0];
+
     return Column(
       children: [
+        Stack(
+          children: [
+            GestureDetector(
+              onTap: () => _showProfilePictureOptions(context, employee),
+              child: _isUploadingImage
+                  ? Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: const Color(0xFF2896FD), width: 2),
+                ),
+                child: const Center(
+                  child: SizedBox(
+                    width: 28,
+                    height: 28,
+                    child: CircularProgressIndicator(strokeWidth: 3),
+                  ),
+                ),
+              )
+                  : employee.profilePictureUrl != null && employee.profilePictureUrl!.isNotEmpty
+                  ? Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: const Color(0xFF2896FD), width: 2),
+                ),
+                child: ClipOval(
+                  child: CachedNetworkImage(
+                    imageUrl: employee.profilePictureUrl!,
+                    fit: BoxFit.cover,
+                    placeholder: (context, url) =>
+                    const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                    errorWidget: (context, url, error) => const Icon(Icons.error),
+                  ),
+                ),
+              )
+                  : Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF2896FD).withValues(alpha: 0.3),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: const Color(0xFF2896FD), width: 2),
+                ),
+                child: Center(
+                  child: Text(
+                    initials.toUpperCase(),
+                    style: const TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black54,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              bottom: 0,
+              right: 0,
+              child: GestureDetector(
+                onTap: () => _showProfilePictureOptions(context, employee),
+                child: Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF2896FD),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.camera_alt, color: Colors.white, size: 16),
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
         Text(
           employee.fullName,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: Colors.black,
-          ),
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
         ),
         Text(
           employee.position,
-          style: TextStyle(
-            fontSize: 14,
-            color: Colors.grey[600],
-          ),
+          style: TextStyle(fontSize: 14, color: Colors.grey[600]),
         ),
       ],
     );
@@ -455,4 +599,47 @@ class _EditProfileScreenState extends State<EditProfileScreen> with SingleTicker
       ),
     );
   }
+
+  void _showProfilePictureOptions(BuildContext context, Employee employee) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              visualDensity: VisualDensity.compact,
+              leading: const Icon(Icons.photo_library),
+              title: const Text('Choose from Gallery'),
+              onTap: () {
+                Navigator.pop(context);
+                _pickImage(ImageSource.gallery, employee);
+              },
+            ),
+            ListTile(
+              visualDensity: VisualDensity.compact,
+              leading: const Icon(Icons.camera_alt),
+              title: const Text('Take Photo'),
+              onTap: () {
+                Navigator.pop(context);
+                _pickImage(ImageSource.camera, employee);
+              },
+            ),
+            if (employee.profilePictureUrl != null && employee.profilePictureUrl!.isNotEmpty)
+              ListTile(
+                visualDensity: VisualDensity.compact,
+                leading: const Icon(Icons.delete, color: Colors.red),
+                title: const Text('Remove Photo', style: TextStyle(color: Colors.red)),
+                onTap: () {
+                  Navigator.pop(context);
+                  _removeProfilePicture(employee);
+                },
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
 }

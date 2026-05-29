@@ -244,7 +244,7 @@ class _AttendanceListScreenState extends State<AttendanceListScreen> {
               child: Padding(
                 padding: const EdgeInsets.only(bottom: 12),
                 child: Text(
-                  "${DateFormat('hh:mm a').format(log.timestamp)} — ${log.type.label}",
+                  "${log.formattedTime} — ${log.type.label}",
                   style: const TextStyle(fontSize: 13),
                 ),
               ),

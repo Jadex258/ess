@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:ess/enums/skeleton_loading_enum.dart';
 import 'package:ess/main.dart';
 import 'package:ess/models/attendance_record.dart';
@@ -17,6 +18,7 @@ import 'package:ess/widgets/app_bar.dart';
 import 'package:ess/widgets/skeleton_loading_widget.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart' hide Badge;
+import 'package:insta_image_viewer/insta_image_viewer.dart';
 import 'package:intl/intl.dart';
 import 'package:lottie/lottie.dart';
 import 'package:persistent_bottom_nav_bar_v2/persistent_bottom_nav_bar_v2.dart';
@@ -53,15 +55,73 @@ class _HomeScreenState extends State<HomeScreen> {
       backgroundColor: const Color(0xFFF5F5F5),
       appBar: CustomAppBar(
         bgColor: const Color(0xFFF5F5F5),
-        titleWidget: Selector<EmployeeProvider?, String>(
-          selector: (_, provider) => provider?.employee?.firstName ?? '',
-          builder: (_, firstName, __) {
-            return Text(
-              '👋 Hi $firstName!',
-              style: const TextStyle(
-                fontFamily: 'Poppins',
-                fontWeight: FontWeight.w400,
-              ),
+        titleWidget: Selector<EmployeeProvider?, ({String firstName, String? photoUrl})>(
+          selector: (_, provider) => (
+          firstName: provider?.employee?.firstName ?? '',
+          photoUrl: provider?.employee?.profilePictureUrl,
+          ),
+          builder: (_, data, __) {
+            final firstName = data.firstName;
+            final photoUrl = data.photoUrl;
+            final initial = data.firstName[0];
+
+            return Row(
+              children: [
+                photoUrl != null && photoUrl.isNotEmpty
+                    ? Container(
+                  width: 35,
+                  height: 35,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: const Color(0xFF2896FD), width: 2),
+                  ),
+                  child: ClipOval(
+                    child: InstaImageViewer(
+                      child: CachedNetworkImage(
+                        imageUrl: photoUrl,
+                        fit: BoxFit.cover,
+                        placeholder: (context, url) => const Center(
+                          child: SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                        ),
+                        errorWidget: (context, url, error) =>
+                        const Icon(Icons.error),
+                      ),
+                    ),
+                  ),
+                )
+                    : Container(
+                  width: 35,
+                  height: 35,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF2896FD).withValues(alpha: 0.3),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: const Color(0xFF2896FD), width: 2),
+                  ),
+                  child: Center(
+                    child: Text(
+                      initial.toUpperCase(),
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black54,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Hi $firstName!',
+                  style: const TextStyle(
+                    fontFamily: 'Poppins',
+                    fontWeight: FontWeight.w500,
+                    fontSize: 16
+                  ),
+                ),
+              ],
             );
           },
         ),

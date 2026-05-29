@@ -35,7 +35,8 @@ class Payslip {
       deductions: (json['deductions'] as num).toDouble(),
       netPay: (json['netPay'] as num).toDouble(),
       deductionBreakdown: json['deductionBreakdown'] != null
-          ? Map<String, double>.from(json['deductionBreakdown'])
+          ? (json['deductionBreakdown'] as Map<String, dynamic>)
+          .map((k, v) => MapEntry(k, (v as num).toDouble()))
           : null,
     );
   }

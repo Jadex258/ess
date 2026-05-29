@@ -1,17 +1,17 @@
-import 'package:ess/enums/account_enum.dart';
 import 'package:ess/main.dart';
 import 'package:ess/models/employee.dart';
 import 'package:ess/provider/employee_provider.dart';
 import 'package:ess/screens/authentication/login.dart';
 import 'package:ess/screens/profile/edit_profile.dart';
 import 'package:ess/services/firebase_auth_service.dart';
-import 'package:ess/services/local_notification_service.dart';
 import 'package:ess/widgets/app_bar.dart';
 import 'package:ess/widgets/empty_widget.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:insta_image_viewer/insta_image_viewer.dart';
 import 'package:intl/intl.dart';
 import 'package:persistent_bottom_nav_bar_v2/persistent_bottom_nav_bar_v2.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
 
 class ViewProfileScreen extends StatelessWidget {
@@ -80,16 +80,32 @@ class ViewProfileScreen extends StatelessWidget {
                   final formattedHireDate = DateFormat('MMMM d, yyyy').format(employee.hireDate);
                   return Column(
                     children: [
-                      Container(
+                      employee.profilePictureUrl != null && employee.profilePictureUrl!.isNotEmpty
+                          ? Container(
+                        width: 100,
+                        height: 100,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: const Color(0xFF2896FD), width: 2),
+                        ),
+                        child: ClipOval(
+                          child: InstaImageViewer(
+                            child: CachedNetworkImage(
+                              imageUrl: employee.profilePictureUrl!,
+                              fit: BoxFit.cover,
+                              placeholder: (context, url) => const CircularProgressIndicator(),
+                              errorWidget: (context, url, error) => const Icon(Icons.error),
+                            ),
+                          ),
+                        ),
+                      )
+                          : Container(
                         width: 100,
                         height: 100,
                         decoration: BoxDecoration(
                           color: const Color(0xFF2896FD).withValues(alpha: 0.3),
                           shape: BoxShape.circle,
-                          border: Border.all(
-                            color: const Color(0xFF2896FD),
-                            width: 2,
-                          ),
+                          border: Border.all(color: const Color(0xFF2896FD), width: 2),
                         ),
                         child: Center(
                           child: Text(
@@ -100,7 +116,7 @@ class ViewProfileScreen extends StatelessWidget {
                               color: Colors.black54,
                             ),
                           ),
-                        )
+                        ),
                       ),
                       const SizedBox(height: 12),
                       Text(
